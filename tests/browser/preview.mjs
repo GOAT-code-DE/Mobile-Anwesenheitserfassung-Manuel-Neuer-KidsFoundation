@@ -16,6 +16,13 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     assert.equal(await page.locator('input[type=password]').count(),0);
     await page.getByRole('button',{name:'Testen starten →'}).click();await ready();
     assert.equal(await page.locator('#today-count').innerText(),'14');
+    const search=page.getByLabel('Kind suchen');
+    await search.focus();await page.setViewportSize({width:390,height:430});await search.fill('Amira');await page.waitForTimeout(450);
+    const found=page.locator('.child-row').filter({hasText:'Amira'});await found.waitFor();
+    const visibleResult=await found.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;});
+    assert.equal(visibleResult,true,`${name}: search result is hidden by the simulated phone keyboard`);
+    assert.equal(await page.locator('#main').evaluate(el=>el.classList.contains('searching-children')),true);
+    await search.fill('');await search.press('Tab');await page.setViewportSize({width:390,height:844});
     await page.getByLabel('Aktueller Standort').selectOption('2');await ready();
     assert.equal(await page.getByLabel('Aktueller Standort').inputValue(),'2');
     await page.locator('[data-nav="children"]').click();await ready();
@@ -40,6 +47,8 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.locator('[data-weekday="2"]').click();await report();assert.ok(!(await page.locator('#active-filters').innerText()).includes('Dienstag'));
     await page.locator('#clear-all-filters').click();await report();await page.getByLabel('Aktueller Standort').selectOption('1');await report();await page.locator('[data-period=month]').click();await report();
     assert.equal(await page.locator('#metric-visits').innerText(),'204');assert.equal(await page.locator('#metric-children').innerText(),'24');
+    const clippedValues=await page.locator('.timeline-value,.weekday-bar strong').evaluateAll(values=>values.filter(value=>{const chart=value.closest('.timeline-chart,.weekday-chart').getBoundingClientRect(),box=value.getBoundingClientRect();return box.top<chart.top||box.bottom>chart.bottom;}).map(value=>value.textContent));
+    assert.deepEqual(clippedValues,[],`${name}: values above high bars are clipped`);
     await page.evaluate(()=>scrollTo(0,0));await overflow();await page.screenshot({path:`artifacts/preview-check/${name}-mobile.png`,fullPage:true});
     await page.getByLabel('Demorolle').selectOption('employee');await ready();assert.equal(await page.locator('#site-picker option').count(),1);
     await page.getByLabel('Demorolle').selectOption('admin');await ready();await page.getByRole('button',{name:'＋ Mitarbeitende einladen'}).click();

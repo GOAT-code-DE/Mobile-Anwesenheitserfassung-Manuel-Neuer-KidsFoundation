@@ -10,7 +10,7 @@
   const iso = d => d.toISOString().slice(0,10);
   const addDays = (value, days) => { const d = new Date(value + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return iso(d); };
   const weekday = value => new Date(value + 'T12:00:00Z').getUTCDay();
-  let session, siteId, children = [], toastTimer, filter, report, queryVersion = 0, searchTimer, timeSelection = null;
+  let session, siteId, children = [], toastTimer, filter, report, queryVersion = 0, searchTimer, searchRevealTimer, timeSelection = null;
   const countrySets = {};
 
   async function api(path, method = 'GET', data, blob = false) {
@@ -80,7 +80,17 @@
   }
   function initChildren() {
     if(page === 'today') $('#today-date').textContent = new Date(session.today + 'T12:00:00Z').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
-    $('#child-search').addEventListener('input',()=>{clearTimeout(searchTimer); searchTimer=setTimeout(renderChildren,100);});
+    const searchInput=$('#child-search');
+    const revealResults=()=>{
+      const mobile=matchMedia('(max-width:760px)').matches;
+      const active=document.activeElement===searchInput||searchInput.value.trim().length>0;
+      $('#main').classList.toggle('searching-children',mobile&&active);
+      clearTimeout(searchRevealTimer);
+      if(mobile&&document.activeElement===searchInput)searchRevealTimer=setTimeout(()=>$('.search-panel').scrollIntoView({block:'start',behavior:'smooth'}),260);
+    };
+    searchInput.addEventListener('focus',revealResults);
+    searchInput.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{renderChildren();revealResults();},100);});
+    searchInput.addEventListener('blur',revealResults);
     $('#include-inactive').addEventListener('change',loadChildren);
     $$('[data-action="new-child"]').forEach(b=>b.addEventListener('click',()=>openChild()));
     $('#children-list').addEventListener('click',e=>{
