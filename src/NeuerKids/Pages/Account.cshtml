@@ -1,0 +1,32 @@
+@page
+@model AccountModel
+@{ ViewData["Title"] = "Anmelden"; ViewData["Page"] = "account"; }
+<div class="auth-card">
+    <a class="brand" href="/"><img src="/brand/foundation-logo.svg" alt="Manuel Neuer Kids Foundation" width="632" height="150" /></a>
+    <div class="eyebrow">UNSER ALLTAG. GUT ORGANISIERT.</div>
+    <h1>@(Model.Mode == "setup" ? "Zugang absichern." : Model.Mode == "verify" ? "Ein Schritt noch." : Model.Mode == "activate" ? "Willkommen im Team." : Model.Mode == "recovery" ? "Gut abgesichert." : "Schön, dass du da bist.")</h1>
+    @if (Model.Error is not null) { <div class="notice error" role="alert">@Model.Error</div> }
+    @if (Model.Mode == "activate")
+    {
+        <p>Lege dein persönliches Passwort fest. Anschließend richtest du die Authenticator-App ein.</p>
+        <form method="post" asp-page-handler="Activate" class="stack"><input type="hidden" asp-for="UserId" /><input type="hidden" asp-for="Token" /><label>Neues Passwort<input asp-for="Password" type="password" required minlength="12" autocomplete="new-password" /></label><small>Mindestens 12 Zeichen, Groß- und Kleinbuchstaben und eine Ziffer.</small><button class="button primary">Zugang aktivieren</button></form>
+    }
+    else if (Model.Mode is "verify" or "setup")
+    {
+        @if (Model.Mode == "setup") { <p>Scanne den QR-Code mit Microsoft Authenticator, Google Authenticator oder einer anderen TOTP-App.</p><img class="qr" src="@Model.QrData" alt="QR-Code zur Einrichtung der Authenticator-App" /><details><summary>Manuell einrichten</summary><code class="secret">@Model.Secret</code></details> }
+        else { <p>Gib den aktuellen Code aus deiner Authenticator-App ein.</p> }
+        <form method="post" asp-page-handler="Verify" class="stack"><label>Bestätigungscode<input asp-for="Code" autocomplete="one-time-code" required autofocus /></label>@if (Model.Mode == "verify") { <label class="check"><input asp-for="UseRecovery" /> Wiederherstellungscode verwenden</label> }<button class="button primary">Anmeldung bestätigen</button></form>
+    }
+    else if (Model.Mode == "recovery")
+    {
+        <p>Bewahre diese einmaligen Wiederherstellungscodes sicher auf. Damit kommst du auch bei Verlust deines Handys wieder in deinen Zugang.</p>
+        <div class="recovery-codes">@foreach (var code in Model.RecoveryCodes ?? []) { <code>@code</code> }</div><a href="/" class="button primary">Codes gesichert · Weiter</a>
+    }
+    else
+    {
+        <p>Melde dich an, um Kinder zu erfassen und den Überblick zu behalten.</p>
+        <form method="post" asp-page-handler="Login" class="stack"><label>E-Mail-Adresse<input asp-for="Email" type="email" required autocomplete="username" /></label><label>Passwort<input asp-for="Password" type="password" required autocomplete="current-password" /></label><button class="button primary">Anmelden <span>→</span></button></form>
+        <p class="muted small">Passwort vergessen oder Handy verloren? Deine zentrale Administration kann dir einen neuen Aktivierungslink geben.</p>
+        @if (Model.Demo) { <div class="demo-entry"><span class="tag">NUR TESTDATEN</span><h2>Die App ausprobieren</h2><p>Alle Kinder und Anwesenheiten sind erfunden.</p><form method="post" asp-page-handler="Demo" class="stack"><button class="button primary" name="role" value="manager">Als Hausleitung starten →</button><div class="button-row"><button class="button" name="role" value="employee">Mitarbeitende</button><button class="button" name="role" value="admin">Administration</button></div></form></div> }
+    }
+</div>
