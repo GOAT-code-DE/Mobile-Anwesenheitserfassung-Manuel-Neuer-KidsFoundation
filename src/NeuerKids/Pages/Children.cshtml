@@ -1,0 +1,7 @@
+@page
+@{ ViewData["Title"] = "Kinder"; ViewData["Page"] = "children"; }
+<div class="page-heading"><div><div class="eyebrow">UNSERE GEMEINSCHAFT</div><h1>Kinder im Haus.</h1><p>Einmal angelegt. Beim nächsten Besuch direkt gefunden.</p></div><button class="button primary" data-action="new-child">＋ Kind anlegen</button></div>
+<section class="panel search-panel"><label class="search-box"><span>⌕</span><input id="child-search" type="search" placeholder="Vor- oder Nachname suchen …" autocomplete="off" aria-label="Kind suchen" /></label><label class="check"><input id="include-inactive" type="checkbox" /> Inaktive Kinder einbeziehen</label></section>
+<div class="section-heading"><h2>Alle Kinder</h2><span id="list-caption" class="muted"></span></div>
+<div id="children-list" class="children-list" aria-live="polite"><div class="empty-state">Kinder werden geladen …</div></div>
+<partial name="_ChildDialog" />
