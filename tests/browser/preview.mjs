@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+const { chromium, webkit } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5081/';
+await mkdir('artifacts/preview-check', { recursive: true });
+for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
+  const browser=await engine.launch(name==='chromium'&&process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{});
+  const context=await browser.newContext({viewport:{width:390,height:844},locale:'de-DE',timezoneId:'Europe/Berlin'}),page=await context.newPage();
+  const errors=[],requests=[];
+  page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>requests.push({url:r.url(),method:r.method()}));
+  const ready=async()=>{await page.locator('body[data-ready=true]').waitFor();};
+  const report=async()=>{await page.locator('#export-button:not([disabled])').waitFor();await ready();};
+  const overflow=async()=>assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name}: overflow`);
+  try {
+    await page.goto(base);await ready();
+    assert.equal(await page.locator('input[type=password]').count(),0);
+    await page.getByRole('button',{name:'Testen starten →'}).click();await ready();
+    assert.equal(await page.locator('#today-count').innerText(),'14');
+    await page.getByLabel('Aktueller Standort').selectOption('2');await ready();
+    assert.equal(await page.getByLabel('Aktueller Standort').inputValue(),'2');
+    await page.locator('[data-nav="children"]').click();await ready();
+    assert.equal(await page.getByLabel('Aktueller Standort').inputValue(),'2');
+    const surname='Onlineprobe-'+name;
+    await page.locator('[data-action="new-child"]').click();
+    const form=page.locator('#child-form');
+    await form.locator('[name=firstName]').fill('Tessa');await form.locator('[name=lastName]').fill(surname);await form.locator('[name=birthDate]').fill('2015-02-10');await form.locator('[name=gender]').selectOption('Female');await page.getByLabel('Staatsangehörigkeit hinzufügen').selectOption('DE');
+    await form.locator('[name=contactName]').fill('Beispielkontakt');await form.locator('[name=contactPhone]').fill('+49 000 000000');await form.locator('[name=contactRelationship]').fill('Erfunden');
+    await page.getByRole('button',{name:'Speichern & heute erfassen'}).click();await page.locator('#child-dialog').waitFor({state:'hidden'});
+    await page.getByLabel('Kind suchen').fill(surname);const child=page.locator('.child-row').filter({hasText:surname});await child.locator('.presence-badge').waitFor();
+    await page.locator('[data-nav="today"]').click();await ready();await page.getByLabel('Kind suchen').fill(surname);await child.locator('.presence-badge').waitFor();
+    await child.locator('.child-main > button').click();await form.locator('[name=firstName]').fill('Tessa-Lina');await form.getByRole('button',{name:'Speichern',exact:true}).click();await page.locator('#child-dialog').waitFor({state:'hidden'});
+    assert.match(await child.innerText(),/Tessa-Lina/);await child.locator('[data-undo]').click();await child.locator('[data-attend]').click();await child.locator('.presence-badge').waitFor();
+    await child.locator('.child-main > button').click();await form.locator('[name=historyDay]').fill('2026-09-18');await page.getByRole('button',{name:'Nachtragen',exact:true}).click();await ready();assert.match(await page.locator('#history-list').innerText(),/18.9.2026/);
+    await page.locator('[data-action=delete-invalid]').click();await page.locator('#confirm-action').click();await page.locator('#confirm-dialog').waitFor({state:'hidden'});
+    await page.locator('[data-nav="dashboard"]').click();await report();
+    await page.locator('[data-period=month]').click();await report();await page.locator('#open-filters').click();
+    const filter=page.locator('#filter-form');await filter.locator('[name=minAge]').fill('10');await filter.locator('[name=maxAge]').fill('14');await page.getByRole('button',{name:'Auswertung anzeigen →'}).click();await report();await page.locator('[data-weekday="2"]').click();await report();
+    assert.equal(await page.locator('#metric-visits').innerText(),'11');assert.match(await page.locator('#active-filters').innerText(),/Bottrop/);
+    const downloadPromise=page.waitForEvent('download');await page.locator('#export-button').click();const download=await downloadPromise;await download.saveAs(`artifacts/preview-check/${name}.xlsx`);
+    await page.locator('[data-weekday="2"]').click();await report();assert.ok(!(await page.locator('#active-filters').innerText()).includes('Dienstag'));
+    await page.locator('#clear-all-filters').click();await report();await page.getByLabel('Aktueller Standort').selectOption('1');await report();await page.locator('[data-period=month]').click();await report();
+    assert.equal(await page.locator('#metric-visits').innerText(),'204');assert.equal(await page.locator('#metric-children').innerText(),'24');
+    await page.evaluate(()=>scrollTo(0,0));await overflow();await page.screenshot({path:`artifacts/preview-check/${name}-mobile.png`,fullPage:true});
+    await page.getByLabel('Demorolle').selectOption('employee');await ready();assert.equal(await page.locator('#site-picker option').count(),1);
+    await page.getByLabel('Demorolle').selectOption('admin');await ready();await page.getByRole('button',{name:'＋ Mitarbeitende einladen'}).click();
+    const user=page.locator('#user-form');await user.locator('[name=name]').fill('Testperson');await user.locator('[name=email]').fill('probe@example.invalid');await user.locator('[name=site2]').selectOption('Employee');await user.getByRole('button',{name:'Speichern',exact:true}).click();await page.locator('#activation-dialog').waitFor();assert.match(await page.locator('#activation-dialog').innerText(),/kein echter Zugang/);await page.getByRole('button',{name:'Fertig',exact:true}).click();
+    await page.getByLabel('Demorolle').selectOption('manager');await ready();await page.locator('[data-nav=children]').click();await ready();await page.getByLabel('Inaktive Kinder einbeziehen').check();await page.getByLabel('Kind suchen').fill('Robin');await page.locator('.archive-badge').waitFor();await page.locator('.child-row').filter({hasText:'Robin'}).locator('[data-attend]').click();await page.locator('.child-row').filter({hasText:'Robin'}).locator('.presence-badge').waitFor();
+    await page.locator('#demo-reset').click();await ready();await page.getByLabel('Inaktive Kinder einbeziehen').check();await page.getByLabel('Kind suchen').fill('Robin');await page.locator('.archive-badge').waitFor();
+    await page.locator('[data-nav=dashboard]').click();await report();await page.setViewportSize({width:1440,height:1000});await overflow();await page.screenshot({path:`artifacts/preview-check/${name}-desktop.png`,fullPage:true});
+    assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);assert.ok(requests.every(r=>r.method==='GET'&&!r.url.includes('/api/')),JSON.stringify(requests.filter(r=>r.method!=='GET'||r.url.includes('/api/'))));assert.deepEqual(errors,[]);
+    console.log(`${name}: start without login; site/role switching; CRUD, correction, archive, demo administration; known dashboard totals; filtering and Excel; mobile/desktop; no server writes or browser storage: passed`);
+  } finally {await context.close();await browser.close();}
+}

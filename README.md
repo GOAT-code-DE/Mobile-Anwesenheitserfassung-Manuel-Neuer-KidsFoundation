@@ -2,7 +2,15 @@
 
 Mobile Webapp für die Manuel Neuer Kids Foundation: Tagesanwesenheit, Kinderverwaltung und ein interaktives Dashboard für Gelsenkirchen und Bottrop.
 
-**Entwicklungsstand mit ausschließlich synthetischen Beispieldaten. Kein freigegebener Echtbetrieb.** Der Quellcode wird zunächst in diesem privaten GitHub-Repository verwaltet. Es gibt keine automatische Veröffentlichung und kein Azure-Abonnement wird angelegt.
+**Entwicklungsstand mit ausschließlich synthetischen Beispieldaten. Kein freigegebener Echtbetrieb.** Die teilbare Vorschau wird über GitHub Pages veröffentlicht. Für den späteren Echtbetrieb bleibt die ASP.NET-Anwendung vorgesehen; Azure wurde nicht eingerichtet.
+
+## Direkt im Browser testen
+
+[Öffentliche Demo starten](https://goat-code-de.github.io/Mobile-Anwesenheitserfassung-Manuel-Neuer-KidsFoundation/)
+
+Ohne Anmeldung auf **„Testen starten“** klicken. Dieselben Seiten, Farben und Bedienoberflächen wie in der lokalen App, mit 49 erfundenen Kinderprofilen und 1.673 Beispielbesuchen. Standorte und Demorollen lassen sich oben wechseln. Erfassung, Korrektur, Archivsuche, Dashboard und Excel-Export sind bedienbar. Änderungen bleiben beim Wechsel zwischen den Demo-Seiten erhalten und werden beim Neuladen zurückgesetzt. Es werden keine eingegebenen Daten an einen App-Server gesendet oder dauerhaft im Browser gespeichert.
+
+Die Demo simuliert die Datenfunktionen im Browser. Echte persönliche Anmeldung, MFA, gemeinsame Datenhaltung und Zugangsfreigaben bleiben Funktionen der ASP.NET-Betriebsfassung. Die Demo-Administration legt keine echten Konten an und versendet keine Einladungen. Details: [preview/README.md](preview/README.md).
 
 ## Lokal ausprobieren
 
@@ -46,7 +54,7 @@ dotnet build NeuerKids.slnx -c Release --no-restore -warnaserror
 dotnet test NeuerKids.slnx -c Release --no-build
 ```
 
-GitHub Actions führt diese Prüfungen bei Änderungen aus und stellt das Anwendungspaket als Artefakt bereit. Es wird **nicht** automatisch veröffentlicht. Browserprüfungen und Einschränkungen sind in [docs/VERIFICATION.md](docs/VERIFICATION.md) dokumentiert.
+GitHub Actions führt diese Prüfungen bei Änderungen aus und stellt das Anwendungspaket als Artefakt bereit. Die ASP.NET-Betriebsfassung wird **nicht** automatisch veröffentlicht. Der separate Pages-Workflow veröffentlicht ausschließlich die statische Vorschau. Browserprüfungen und Einschränkungen sind in [docs/VERIFICATION.md](docs/VERIFICATION.md) dokumentiert.
 
 ## Regeln und Grenzen
 

@@ -2,7 +2,7 @@
 
 ## GitHub zuerst
 
-Dieses Projekt wird zunächst ausschließlich als privates GitHub-Projekt mit automatischem Build und Tests geführt. GitHub Pages kann die serverseitige ASP.NET-Anwendung nicht ausführen. Die Demo läuft lokal. Azure-Ressourcen und Domains wurden nicht eingerichtet.
+Der Quellcode liegt in einem öffentlichen GitHub-Repository. Eine ausdrücklich gekennzeichnete, statische Vorschau mit erfundenen Daten wird über GitHub Pages bereitgestellt. Diese übernimmt die Oberfläche der ASP.NET-App und simuliert ihre Datenfunktionen im Arbeitsspeicher des Browsers. GitHub Pages führt den ASP.NET-Server nicht aus. Azure-Ressourcen und eigene Domains wurden nicht eingerichtet. Die nachfolgenden Betriebsanforderungen gelten für die spätere Serverfassung mit echten Daten.
 
 ## Voraussetzungen vor echten Daten
 

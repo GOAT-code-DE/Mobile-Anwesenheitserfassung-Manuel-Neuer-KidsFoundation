@@ -32,3 +32,7 @@ Node.js 24 und pnpm 11 verwenden. Unter Linux bei Bedarf `playwright install --w
 - Datenschutz-, Aufbewahrungs-, Anonymisierungs- und Markenfreigabe durch die Foundation.
 
 Azure wurde nicht eingerichtet; ein Produktivbetrieb mit echten Kinderdaten ist nicht freigegeben.
+
+## Öffentliche statische Vorschau
+
+Zusätzlich mit `tests/browser/preview.mjs` in Chromium und WebKit geprüft: Start ohne Anmeldung, Standortwechsel mit Erhalt beim Seitenwechsel, Profile anlegen/bearbeiten/entfernen, optionaler Kontakt, Tagesanwesenheit zurücknehmen und erneut erfassen, Nachtrag, Archivreaktivierung, Rollenwechsel, simulierte Einladung, kombinierte Filter, Diagrammklick und Entfernen des Filters, Zurücksetzen, Excel-Download und mobile/Desktop-Darstellung. Bekannte Beispielsummen: Gelsenkirchen September 204 Besuche/24 Kinder; Bottrop September, 10–14 Jahre und Dienstag: 11 Besuche. Keine JavaScript-/Konsolenfehler, keine API-Schreibaufrufe oder Browser-Speicherung. XLSX-Dateien als ZIP/XML geprüft, Filterbeschreibung und Zahlen enthalten, keine persönlichen Datenzeilen.
