@@ -1,0 +1,39 @@
+name: Anwendung prüfen
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+      - name: Pakete wiederherstellen
+        run: dotnet restore NeuerKids.slnx --locked-mode
+      - name: Sicherheitsprüfung der Abhängigkeiten
+        run: dotnet list src/NeuerKids/NeuerKids.csproj package --vulnerable --include-transitive
+      - name: Kompilieren
+        run: dotnet build NeuerKids.slnx -c Release --no-restore -warnaserror
+      - name: Fachlogik, Anmeldung und Zugriffsrechte prüfen
+        run: dotnet test NeuerKids.slnx -c Release --no-build --logger trx --results-directory artifacts/tests
+      - name: Anwendung paketieren
+        run: dotnet publish src/NeuerKids/NeuerKids.csproj -c Release --no-build -o artifacts/app
+      - name: Testergebnisse aufbewahren
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testergebnisse
+          path: artifacts/tests
+      - name: Anwendung als Build-Artefakt ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: neuer-kids-webapp
+          path: artifacts/app
