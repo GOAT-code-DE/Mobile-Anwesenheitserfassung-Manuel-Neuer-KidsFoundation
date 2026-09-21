@@ -1,0 +1,49 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject IConfiguration Config
+@{ var signedIn = User.Identity?.IsAuthenticated == true; var demo = Config.GetValue<bool>("Demo:Enabled"); }
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    <title>@ViewData["Title"] · NEUER KIDS</title>
+    <link rel="icon" href="data:image/png;base64,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" type="image/png" />
+    <link rel="stylesheet" href="/css/brand-fonts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/css/app.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/css/foundation.css" asp-append-version="true" />
+    <script src="/js/app.js" asp-append-version="true" defer></script>
+</head>
+<body class="@(signedIn ? "app-shell" : "auth-shell")" data-page="@ViewData["Page"]">
+<a href="#main" class="skip-link">Zum Inhalt</a>
+@if (signedIn)
+{
+    <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Manuel Neuer Kids Foundation · Heute"><img src="/brand/foundation-logo.svg" alt="Manuel Neuer Kids Foundation" width="632" height="150" /></a>
+        <div class="app-name">ANWESENHEIT</div>
+        <div class="sidebar-label">UNSER ALLTAG</div>
+        <nav aria-label="Hauptnavigation">
+            <a href="/" data-nav="today"><span class="nav-icon">◷</span><span>Heute</span></a>
+            <a href="/Children" data-nav="children"><span class="nav-icon">♧</span><span>Kinder</span></a>
+            <a href="/Dashboard" data-nav="dashboard"><span class="nav-icon">▥</span><span>Dashboard</span></a>
+            <a href="/Admin" data-nav="admin" id="admin-nav" hidden><span class="nav-icon">⚙</span><span>Verwaltung</span></a>
+        </nav>
+        <div class="sidebar-foot"><span class="small-label">GEMEINSAM FÜR KINDER.</span><p>Zwei Häuser.<br />Ein guter Ort zum Wachsen.</p></div>
+    </aside>
+    <div class="workspace">
+        <div class="mobile-brand"><a href="/" aria-label="Manuel Neuer Kids Foundation · Heute"><img src="/brand/foundation-logo.svg" alt="Manuel Neuer Kids Foundation" width="632" height="150" /></a><span>ANWESENHEIT</span></div>
+        <header class="topbar"><div class="location-control"><span class="location-icon">⌖</span><label class="sr-only" for="site-picker">Aktueller Standort</label><select id="site-picker" aria-label="Aktueller Standort"></select></div><div class="account"><span class="user-avatar">NK</span><span id="user-name">Mein Zugang</span><form method="post" asp-page="/Account" asp-page-handler="Logout"><button class="icon-button" title="Abmelden" aria-label="Abmelden">↪</button></form></div></header>
+        @if (demo) { <div class="demo-banner"><span>TESTUMGEBUNG</span> Ausschließlich erfundene Beispieldaten · keine echten Kinderdaten eingeben.</div> }
+        <main id="main" class="main-content">@RenderBody()</main>
+        <footer class="app-footer"><span>Manuel Neuer Kids Foundation</span><span>Gelsenkirchen & Bottrop</span></footer>
+    </div>
+}
+else
+{
+    <main id="main">@RenderBody()</main>
+}
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<noscript><div class="notice">Bitte JavaScript aktivieren, um die Erfassung und das Dashboard zu nutzen.</div></noscript>
+</body>
+</html>
