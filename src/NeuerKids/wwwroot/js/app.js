@@ -81,9 +81,10 @@
   function initChildren() {
     if(page === 'today') $('#today-date').textContent = new Date(session.today + 'T12:00:00Z').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
     const searchInput=$('#child-search');
-    const updateSearchLayout=()=>$('#main').classList.toggle('searching-children',matchMedia('(max-width:760px)').matches&&searchInput.value.trim().length>0);
-    searchInput.addEventListener('focus',()=>{if(!matchMedia('(max-width:760px)').matches)return;clearTimeout(focusScrollTimer);focusScrollTimer=setTimeout(()=>$('.search-panel').scrollIntoView({block:'start',behavior:'auto'}),300);});
+    const updateSearchLayout=()=>$('#main').classList.toggle('searching-children',matchMedia('(max-width:760px)').matches&&(document.activeElement===searchInput||searchInput.value.trim().length>0));
+    searchInput.addEventListener('focus',()=>{if(!matchMedia('(max-width:760px)').matches)return;updateSearchLayout();clearTimeout(focusScrollTimer);focusScrollTimer=setTimeout(()=>$('.search-panel').scrollIntoView({block:'start',behavior:'auto'}),300);});
     searchInput.addEventListener('input',()=>{updateSearchLayout();clearTimeout(searchTimer);searchTimer=setTimeout(renderChildren,80);});
+    searchInput.addEventListener('blur',()=>setTimeout(updateSearchLayout));
     $('#include-inactive').addEventListener('change',loadChildren);
     $$('[data-action="new-child"]').forEach(b=>b.addEventListener('click',()=>openChild()));
     $('#children-list').addEventListener('click',e=>{

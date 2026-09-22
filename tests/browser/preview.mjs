@@ -35,8 +35,8 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     await search.fill('');await page.waitForTimeout(180);positions.push(await searchPosition());await search.fill('Amira');await page.waitForTimeout(180);positions.push(await searchPosition());await search.fill('');await page.waitForTimeout(180);positions.push(await searchPosition());
     assert.ok(Math.max(...positions.map(x=>x.top))-Math.min(...positions.map(x=>x.top))<=1.5,`${name}: search field jumps while entering or clearing text: ${JSON.stringify(positions)}`);
     assert.ok(Math.max(...positions.map(x=>x.scrollY))-Math.min(...positions.map(x=>x.scrollY))<=1.5,`${name}: page scroll jumps while entering or clearing text: ${JSON.stringify(positions)}`);
-    assert.equal(await page.locator('#main').evaluate(el=>el.classList.contains('searching-children')),false);
-    await search.press('Tab');await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.locator('#main').evaluate(el=>el.classList.contains('searching-children')),true);
+    await search.press('Tab');await page.waitForTimeout(50);assert.equal(await page.locator('#main').evaluate(el=>el.classList.contains('searching-children')),false);await page.setViewportSize({width:390,height:844});
     await page.getByLabel('Aktueller Standort').selectOption('2');await ready();
     assert.equal(await page.getByLabel('Aktueller Standort').inputValue(),'2');
     await page.locator('[data-nav="children"]').click();await ready();
