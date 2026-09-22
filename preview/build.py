@@ -51,6 +51,6 @@ js = js.replace("a.href = a.pathname + '?site=' + siteId", "a.href = '?page=' + 
 js = js.replace('href="/Admin"', 'href="?page=admin&role=admin"')
 js = js.replace("location.origin+path", "new URL(path, location.href).href")
 js = js.replace("()=>$('#activation-link').value=''", "()=>{const input=$('#activation-link');if(input)input.value='';}")
-js = js.replace('  init();', "  window.neuerKidsDemo.dispose = () => {clearTimeout(searchTimer);clearTimeout(searchRevealTimer);clearTimeout(toastTimer);++queryVersion;};\n  init().finally(() => document.body.dataset.ready = 'true');")
+js = js.replace('  init();', "  window.neuerKidsDemo.dispose = () => {clearTimeout(searchTimer);clearTimeout(toastTimer);++queryVersion;};\n  init().finally(() => document.body.dataset.ready = 'true');")
 (out / 'assets/js/app.js').write_text(js)
 print(f'Static preview built: {out}')
