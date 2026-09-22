@@ -92,10 +92,11 @@
     form.elements.birthDate.max = session.today; form.elements.historyDay.value = session.today; form.elements.historyDay.max = session.today;
     countryPicker('child-countries',child?.nationalities ?? []); $('#duplicate-confirm').hidden = true; errorBox('#child-error','');
     $('#save-and-attend').hidden = !!child; $('#delete-section').hidden = !child || !manager(); $('#history-section').hidden = !child || !manager();
+    $('#history-list').hidden = true; $('#history-toggle').setAttribute('aria-expanded','false'); $('#history-toggle').textContent = 'Anwesenheitstage anzeigen';
     openDialog($('#child-dialog')); if(child && manager()) await loadHistory(id);
   }
   async function loadHistory(id) {
-    try { const entries = await api(`/children/${id}/attendance`); $('#history-list').innerHTML = entries.length ? entries.map(a => `<div class="history-row"><span>${date(a.day)}</span><button class="button small-button" type="button" data-history-undo="${a.id}">Entfernen</button></div>`).join('') : '<p class="small muted">Noch keine Anwesenheiten.</p>'; }
+    try { const entries = await api(`/children/${id}/attendance`); $('#history-list').innerHTML = entries.length ? `<div class="table-scroll"><table class="history-table"><thead><tr><th>Datum</th><th>Aktion</th></tr></thead><tbody>${entries.map(a => `<tr><td>${date(a.day)}</td><td><button class="button small-button" type="button" data-history-undo="${a.id}">Entfernen</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">Noch keine Anwesenheiten.</p>'; }
     catch(e) { errorBox('#child-error',e.message); }
   }
   function confirmAction(title,text,action) {
@@ -135,6 +136,7 @@
       form.dataset.saving='false';
     });
     $('#history-list').addEventListener('click',e=>{const b=e.target.closest('[data-history-undo]');if(!b)return;busy(b,async()=>{await api(`/attendance/${b.dataset.historyUndo}`,'DELETE');await loadHistory($('#child-form').elements.id.value);await loadChildren();toast('Anwesenheit entfernt.');});});
+    $('#history-toggle').addEventListener('click',e=>{const list=$('#history-list'),show=list.hidden;list.hidden=!show;e.currentTarget.setAttribute('aria-expanded',String(show));e.currentTarget.textContent=show?'Anwesenheitstage ausblenden':'Anwesenheitstage anzeigen';});
     $('[data-action="backfill"]').addEventListener('click',e=>busy(e.currentTarget,async()=>{const f=$('#child-form');await api(`/children/${f.elements.id.value}/attendance`,'POST',{day:f.elements.historyDay.value});await loadHistory(f.elements.id.value);await loadChildren();f.elements.revision.value=children.find(c=>c.id===f.elements.id.value)?.revision||f.elements.revision.value;toast('Anwesenheit gespeichert.');}));
     for(const preserve of [false,true]) $(`[data-action="${preserve?'delete-preserve':'delete-invalid'}"]`).addEventListener('click',()=>{
       const id=$('#child-form').elements.id.value;
