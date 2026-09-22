@@ -24,16 +24,16 @@
         <div class="app-name">ANWESENHEIT</div>
         <div class="sidebar-label">UNSER ALLTAG</div>
         <nav aria-label="Hauptnavigation">
-            <a href="/" data-nav="today"><span class="nav-icon">◷</span><span>Heute</span></a>
-            <a href="/Children" data-nav="children"><span class="nav-icon">♧</span><span>Kinder</span></a>
-            <a href="/Dashboard" data-nav="dashboard"><span class="nav-icon">▥</span><span>Dashboard</span></a>
-            <a href="/Admin" data-nav="admin" id="admin-nav" hidden><span class="nav-icon">⚙</span><span>Verwaltung</span></a>
+            <a href="/" data-nav="today"><span>Heute</span></a>
+            <a href="/Children" data-nav="children"><span>Kinder</span></a>
+            <a href="/Dashboard" data-nav="dashboard" id="dashboard-nav" hidden><span>Auswertungen</span></a>
+            <a href="/Admin" data-nav="admin" id="admin-nav" hidden><span>Verwaltung</span></a>
         </nav>
         <div class="sidebar-foot"><span class="small-label">GEMEINSAM FÜR KINDER.</span><p>Zwei Häuser.<br />Ein guter Ort zum Wachsen.</p></div>
     </aside>
     <div class="workspace">
         <div class="mobile-brand"><a href="/" aria-label="Manuel Neuer Kids Foundation · Heute"><img src="/brand/foundation-logo.svg" alt="Manuel Neuer Kids Foundation" width="632" height="150" /></a><span>ANWESENHEIT</span></div>
-        <header class="topbar"><div class="location-control"><span class="location-icon">⌖</span><label class="sr-only" for="site-picker">Aktueller Standort</label><select id="site-picker" aria-label="Aktueller Standort"></select></div><div class="account"><span class="user-avatar">NK</span><span id="user-name">Mein Zugang</span><form method="post" asp-page="/Account" asp-page-handler="Logout"><button class="icon-button" title="Abmelden" aria-label="Abmelden">↪</button></form></div></header>
+        <header class="topbar"><div class="location-control"><label class="sr-only" for="site-picker">Aktueller Standort</label><select id="site-picker" aria-label="Aktueller Standort"></select></div><div class="account"><span class="user-avatar">NK</span><span id="user-name">Mein Zugang</span><form method="post" asp-page="/Account" asp-page-handler="Logout"><button class="button small-button logout-button" title="Abmelden" aria-label="Abmelden">Abmelden</button></form></div></header>
         @if (demo) { <div class="demo-banner"><span>TESTUMGEBUNG</span> Ausschließlich erfundene Beispieldaten · keine echten Kinderdaten eingeben.</div> }
         <main id="main" class="main-content">@RenderBody()</main>
         <footer class="app-footer"><span>Manuel Neuer Kids Foundation</span><span>Gelsenkirchen & Bottrop</span></footer>
@@ -44,6 +44,6 @@ else
     <main id="main">@RenderBody()</main>
 }
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<noscript><div class="notice">Bitte JavaScript aktivieren, um die Erfassung und das Dashboard zu nutzen.</div></noscript>
+<noscript><div class="notice">Bitte JavaScript aktivieren, um die Erfassung und die Auswertungen zu nutzen.</div></noscript>
 </body>
 </html>

@@ -19,7 +19,7 @@ public class Reports(AppDbContext db, Access access, BerlinClock clock)
     public async Task<DashboardReport> Build(ClaimsPrincipal user, ReportFilter filter)
     {
         Validate(filter);
-        var sites = await access.Sites(user, filter.SiteIds ?? []);
+        var sites = await access.Sites(user, filter.SiteIds ?? [], manager: true);
         filter = filter with { SiteIds = sites };
         var current = await Slice(filter, filter.Start, filter.End);
         ReportSlice? comparison = null;

@@ -25,11 +25,13 @@ public class Access(AppDbContext db, UserManager<AppUser> users)
             throw new AppError(403, "Für diesen Standort oder diese Aktion fehlt die Berechtigung.");
         return membership;
     }
-    public async Task<int[]> Sites(ClaimsPrincipal principal, int[] requested)
+    public async Task<int[]> Sites(ClaimsPrincipal principal, int[] requested, bool manager = false)
     {
         var user = await User(principal);
-        var allowed = await db.Memberships.Where(x => x.UserId == user.Id).Select(x => x.SiteId).ToArrayAsync();
-        if (requested.Except(allowed).Any() || allowed.Length == 0) throw new AppError(403, "Kein Zugriff auf diesen Standort.");
+        var memberships = db.Memberships.Where(x => x.UserId == user.Id);
+        if (manager) memberships = memberships.Where(x => x.Role == SiteRole.Manager);
+        var allowed = await memberships.Select(x => x.SiteId).ToArrayAsync();
+        if (requested.Except(allowed).Any() || allowed.Length == 0) throw new AppError(403, manager ? "Auswertungen stehen der Hausleitung zur Verfügung." : "Kein Zugriff auf diesen Standort.");
         return requested.Length == 0 ? allowed : requested.Distinct().ToArray();
     }
     public async Task<AppUser> Admin(ClaimsPrincipal principal)

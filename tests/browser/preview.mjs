@@ -14,8 +14,14 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
   try {
     await page.goto(base);await ready();
     assert.equal(await page.locator('input[type=password]').count(),0);
-    await page.getByRole('button',{name:'Testen starten →'}).click();await ready();
+    const versionedAssets=await page.locator('link[rel=stylesheet][href*="assets/css"],script[src]').evaluateAll(elements=>elements.map(element=>new URL(element.href||element.src).search).every(search=>/^\?v=[0-9a-f]{12}$/.test(search)));
+    assert.equal(versionedAssets,true,`${name}: static assets are not cache-versioned`);
+    await page.getByRole('button',{name:'Testen starten'}).click();await ready();
     assert.equal(await page.locator('#today-count').innerText(),'14');
+    const mobileStartLayout=await page.evaluate(()=>{const search=document.querySelector('.search-panel').getBoundingClientRect(),summary=document.querySelector('.today-summary').getBoundingClientRect();return{searchTop:search.top,summaryTop:summary.top,summaryHeight:summary.height,text:document.body.innerText};});
+    assert.ok(mobileStartLayout.searchTop<mobileStartLayout.summaryTop&&mobileStartLayout.summaryHeight<=110,`${name}: mobile attendance summary is not compact or search-first`);
+    assert.ok(!/[\u2315\u2316\u25a5\u25f7\u260e\u2667\u2699\u2713\u2733\uff0b]/u.test(mobileStartLayout.text),`${name}: decorative symbol remains in the interface`);
+    assert.equal(await page.locator('.nav-icon,.summary-symbol').count(),0);
     const search=page.getByLabel('Kind suchen');
     await search.focus();await page.setViewportSize({width:390,height:430});await search.fill('Amira');await page.waitForTimeout(450);
     const searchSpacing=await search.evaluate(el=>{const style=getComputedStyle(el),box=el.getBoundingClientRect(),wrapper=el.closest('.search-box').getBoundingClientRect();return{left:parseFloat(style.paddingLeft),right:parseFloat(style.paddingRight),height:box.height,wrapperWidth:wrapper.width};});
@@ -43,7 +49,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.locator('[data-action=delete-invalid]').click();await page.locator('#confirm-action').click();await page.locator('#confirm-dialog').waitFor({state:'hidden'});
     await page.locator('[data-nav="dashboard"]').click();await report();
     await page.locator('[data-period=month]').click();await report();await page.locator('#open-filters').click();
-    const filter=page.locator('#filter-form');await filter.locator('[name=minAge]').fill('10');await filter.locator('[name=maxAge]').fill('14');await page.getByRole('button',{name:'Auswertung anzeigen →'}).click();await report();await page.locator('[data-weekday="2"]').click();await report();
+    const filter=page.locator('#filter-form');await filter.locator('[name=minAge]').fill('10');await filter.locator('[name=maxAge]').fill('14');await page.getByRole('button',{name:'Auswertung anzeigen'}).click();await report();await page.locator('[data-weekday="2"]').click();await report();
     assert.equal(await page.locator('#metric-visits').innerText(),'11');assert.match(await page.locator('#active-filters').innerText(),/Bottrop/);
     const downloadPromise=page.waitForEvent('download');await page.locator('#export-button').click();const download=await downloadPromise;await download.saveAs(`artifacts/preview-check/${name}.xlsx`);
     await page.locator('[data-weekday="2"]').click();await report();assert.ok(!(await page.locator('#active-filters').innerText()).includes('Dienstag'));
@@ -52,8 +58,8 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     const clippedValues=await page.locator('.timeline-value,.weekday-bar strong').evaluateAll(values=>values.filter(value=>{const chart=value.closest('.timeline-chart,.weekday-chart').getBoundingClientRect(),box=value.getBoundingClientRect();return box.top<chart.top||box.bottom>chart.bottom;}).map(value=>value.textContent));
     assert.deepEqual(clippedValues,[],`${name}: values above high bars are clipped`);
     await page.evaluate(()=>scrollTo(0,0));await overflow();await page.screenshot({path:`artifacts/preview-check/${name}-mobile.png`,fullPage:true});
-    await page.getByLabel('Demorolle').selectOption('employee');await ready();assert.equal(await page.locator('#site-picker option').count(),1);
-    await page.getByLabel('Demorolle').selectOption('admin');await ready();await page.getByRole('button',{name:'＋ Mitarbeitende einladen'}).click();
+    await page.getByLabel('Demorolle').selectOption('employee');await ready();assert.equal(await page.locator('#site-picker option').count(),1);assert.equal(await page.locator('body').getAttribute('data-page'),'today');assert.equal(await page.locator('#dashboard-nav').evaluate(el=>el.hidden),true);
+    await page.getByLabel('Demorolle').selectOption('admin');await ready();await page.getByRole('button',{name:'Mitarbeitende einladen'}).click();
     const user=page.locator('#user-form');await user.locator('[name=name]').fill('Testperson');await user.locator('[name=email]').fill('probe@example.invalid');await user.locator('[name=site2]').selectOption('Employee');await user.getByRole('button',{name:'Speichern',exact:true}).click();await page.locator('#activation-dialog').waitFor();assert.match(await page.locator('#activation-dialog').innerText(),/kein echter Zugang/);await page.getByRole('button',{name:'Fertig',exact:true}).click();
     await page.getByLabel('Demorolle').selectOption('manager');await ready();await page.locator('[data-nav=children]').click();await ready();await page.getByLabel('Inaktive Kinder einbeziehen').check();await page.getByLabel('Kind suchen').fill('Robin');await page.locator('.archive-badge').waitFor();await page.locator('.child-row').filter({hasText:'Robin'}).locator('[data-attend]').click();await page.locator('.child-row').filter({hasText:'Robin'}).locator('.presence-badge').waitFor();
     await page.locator('#demo-reset').click();await ready();await page.getByLabel('Inaktive Kinder einbeziehen').check();await page.getByLabel('Kind suchen').fill('Robin');await page.locator('.archive-badge').waitFor();

@@ -1,6 +1,6 @@
 # NEUER KIDS · Anwesenheit
 
-Mobile Webapp für die Manuel Neuer Kids Foundation: Tagesanwesenheit, Kinderverwaltung und ein interaktives Dashboard für Gelsenkirchen und Bottrop.
+Mobile Webapp für die Manuel Neuer Kids Foundation: Tagesanwesenheit, Kinderverwaltung und interaktive Auswertungen für Gelsenkirchen und Bottrop.
 
 **Entwicklungsstand mit ausschließlich synthetischen Beispieldaten. Kein freigegebener Echtbetrieb.** Die teilbare Vorschau wird über GitHub Pages veröffentlicht. Für den späteren Echtbetrieb bleibt die ASP.NET-Anwendung vorgesehen; Azure wurde nicht eingerichtet.
 
@@ -8,7 +8,7 @@ Mobile Webapp für die Manuel Neuer Kids Foundation: Tagesanwesenheit, Kinderver
 
 [Öffentliche Demo starten](https://goat-code-de.github.io/Mobile-Anwesenheitserfassung-Manuel-Neuer-KidsFoundation/)
 
-Ohne Anmeldung auf **„Testen starten“** klicken. Dieselben Seiten, Farben und Bedienoberflächen wie in der lokalen App, mit 49 erfundenen Kinderprofilen und 1.673 Beispielbesuchen. Standorte und Demorollen lassen sich oben wechseln. Erfassung, Korrektur, Archivsuche, Dashboard und Excel-Export sind bedienbar. Änderungen bleiben beim Wechsel zwischen den Demo-Seiten erhalten und werden beim Neuladen zurückgesetzt. Es werden keine eingegebenen Daten an einen App-Server gesendet oder dauerhaft im Browser gespeichert.
+Ohne Anmeldung auf **„Testen starten“** klicken. Dieselben Seiten, Farben und Bedienoberflächen wie in der lokalen App, mit 49 erfundenen Kinderprofilen und 1.673 Beispielbesuchen. Standorte und Demorollen lassen sich oben wechseln. Erfassung, Korrektur, Archivsuche, Auswertungen und Excel-Export sind bedienbar. Änderungen bleiben beim Wechsel zwischen den Demo-Seiten erhalten und werden beim Neuladen zurückgesetzt. Es werden keine eingegebenen Daten an einen App-Server gesendet oder dauerhaft im Browser gespeichert.
 
 Die Demo simuliert die Datenfunktionen im Browser. Echte persönliche Anmeldung, MFA, gemeinsame Datenhaltung und Zugangsfreigaben bleiben Funktionen der ASP.NET-Betriebsfassung. Die Demo-Administration legt keine echten Konten an und versendet keine Einladungen. Details: [preview/README.md](preview/README.md).
 
@@ -20,7 +20,7 @@ Voraussetzung: [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10.0).
 bash scripts/run-demo.sh
 ```
 
-Anschließend `http://127.0.0.1:5080` öffnen und einen der ausdrücklich markierten Demo-Zugänge wählen. Die Hausleitung kann beide Standorte nutzen, Mitarbeitende nur Gelsenkirchen. Die zentrale Administration hat zunächst keinen Zugriff auf Kinderdaten.
+Anschließend `http://127.0.0.1:5080` öffnen und einen der ausdrücklich markierten Demo-Zugänge wählen. Die Hausleitung kann beide Standorte und die Auswertungen nutzen. Mitarbeitende erfassen Kinder in Gelsenkirchen und sehen keine Auswertungen. Die zentrale Administration hat zunächst keinen Zugriff auf Kinderdaten.
 
 Windows/PowerShell:
 
@@ -38,8 +38,8 @@ Die lokale SQLite-Datenbank und Sitzungsschlüssel werden unter `src/NeuerKids/A
 - Kinderprofile mit mehreren Staatsangehörigkeiten, automatisch berechnetem Alter und optionalem Notfallkontakt.
 - Standortbezogene Rollen: Mitarbeitende, Hausleitung; separate zentrale Kontenverwaltung.
 - Archivsuche nach mehr als zwölf Kalendermonaten ohne Besuch, Reaktivierung durch neue Anwesenheit.
-- Dashboard mit freien Zeiträumen, Standort-, Alters-, Geschlechts-, Nationalitäts- und Wochentagsfiltern, klickbaren Diagrammen und Vergleichszeiträumen.
-- Echter `.xlsx`-Export aus derselben Berechnung wie das Dashboard, ohne Kinderdaten.
+- Auswertungen für die Hausleitung mit freien Zeiträumen, Standort-, Alters-, Geschlechts-, Nationalitäts- und Wochentagsfiltern, klickbaren Diagrammen und Vergleichszeiträumen.
+- Echter `.xlsx`-Export aus derselben Berechnung wie die Auswertungen, ohne Kinderdaten.
 - Persönliche Konten auf Einladung, Passwörter, TOTP/Authenticator, Wiederherstellungscodes und Sitzungen bis zur nächsten Mitternacht in Europa/Berlin.
 - Administrativ erzeugte, einmalige Aktivierungs-/Rücksetzlinks mit 24 Stunden Laufzeit. Die Administration gibt sie über einen verifizierten Kanal weiter; die App versendet keine E-Mails.
 - Korrektur von Anwesenheiten, getrennte Entfernung von Fehlanlagen und persönlichen Daten, protokollierte Änderungen, konfigurierbare automatische Löschung.

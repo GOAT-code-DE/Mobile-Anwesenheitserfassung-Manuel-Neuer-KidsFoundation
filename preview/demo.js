@@ -1,6 +1,7 @@
 'use strict';
 // Public showcase only. All mutations stay in memory; nothing is sent to a backend or browser storage.
 (() => {
+  const assetVersion=document.currentScript?new URL(document.currentScript.src).search:'';
   const $=s=>document.querySelector(s), clone=x=>structuredClone(x);
   const iso=d=>d.toISOString().slice(0,10), date=s=>new Date(s+'T12:00:00Z');
   const add=(s,n)=>{const d=date(s);d.setUTCDate(d.getUTCDate()+n);return iso(d);};
@@ -68,7 +69,7 @@
   async function request(path,method='GET',input){
     const url=new URL(path,'https://demo.invalid'),parts=url.pathname.split('/').filter(Boolean);
     if(path==='/session')return clone({...member(),sites:member().sites.map(s=>({...s,name:sites.find(x=>x.siteId===s.siteId)?.name})),demo:true,today:seed.today,countries:seed.countries});
-    if(parts[0]==='reports'){const result=report(input);return parts[1]==='export'?window.demoExcel(result):result;}
+    if(parts[0]==='reports'){for(const siteId of input.siteIds??[])allow(siteId,true);const result=report(input);return parts[1]==='export'?window.demoExcel(result):result;}
     if(parts[0]==='children'){
       const id=parts[1];
       if(!id&&method==='GET'){const site=Number(url.searchParams.get('siteId'));allow(site);return children.filter(c=>c.siteId===site).map(view).filter(c=>url.searchParams.get('inactive')==='true'||!c.inactive).sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')||a.firstName.localeCompare(b.firstName,'de'));}
@@ -89,6 +90,7 @@
   function route(page='account',nextRole=role,site='1',push=true){
     if(!seed)return;window.neuerKidsDemo.dispose?.();role=['manager','employee','admin'].includes(nextRole)?nextRole:'manager';window.neuerKidsDemo.role=role;
     if(!['account','today','children','dashboard','admin'].includes(page))page='account';
+    if(role==='employee'&&page==='dashboard')page='today';
     if(push)history.pushState({},'',`?page=${page}&role=${role}&site=${site}`);
     document.body.dataset.ready=page==='account'?'true':'false';$('#toast').hidden=true;document.body.className=page==='account'?'auth-shell':'app-shell';document.body.dataset.page=page;
     $('#demo-root').replaceChildren((page==='account'?$('#login-template'):$('#shell-template')).content.cloneNode(true));
@@ -96,9 +98,9 @@
       $('#main').replaceChildren($('#page-'+page).content.cloneNode(true));
       $('#demo-role').value=role;
       $('#demo-role').addEventListener('change',e=>{const next=e.target.value;route(next==='admin'?'admin':page==='admin'?'today':page,next,'1');});
-      const script=document.createElement('script');script.src='assets/js/app.js';script.onload=()=>script.remove();script.onerror=()=>{$('#main').textContent='Die Vorschau konnte nicht geladen werden. Bitte neu laden.';};document.body.append(script);
+      const script=document.createElement('script');script.src='assets/js/app.js'+assetVersion;script.onload=()=>script.remove();script.onerror=()=>{$('#main').textContent='Die Vorschau konnte nicht geladen werden. Bitte neu laden.';};document.body.append(script);
     }
-    document.title=(page==='account'?'Demo':({today:'Heute',children:'Kinder',dashboard:'Dashboard',admin:'Verwaltung'})[page])+' · NEUER KIDS';scrollTo(0,0);
+    document.title=(page==='account'?'Demo':({today:'Heute',children:'Kinder',dashboard:'Auswertungen',admin:'Verwaltung'})[page])+' · NEUER KIDS';scrollTo(0,0);
   }
   document.addEventListener('submit',e=>{if(e.target.id==='demo-logout'){e.preventDefault();route('account');}});
   document.addEventListener('click',e=>{

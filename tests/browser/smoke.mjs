@@ -18,11 +18,11 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
   const noOverflow = async () => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name}: horizontal overflow`);
   try {
     await page.goto(base + '/Account');
-    await page.getByRole('button', { name: 'Als Hausleitung starten →' }).waitFor();
+    await page.getByRole('button', { name: 'Als Hausleitung starten' }).waitFor();
     await page.evaluate(() => document.fonts.ready);
     await noOverflow();
     await page.screenshot({ path: `artifacts/browser/${name}-login.png`, fullPage: true });
-    await page.getByRole('button', { name: 'Als Hausleitung starten →' }).click();
+    await page.getByRole('button', { name: 'Als Hausleitung starten' }).click();
     await settle();
     assert.equal(await page.locator('.mobile-brand img').evaluate(e => e.complete && e.naturalWidth > 0), true);
     const token = `${name}-${Date.now()}`;
@@ -62,7 +62,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     await filters.locator('[name="site"][value="2"]').check();
     await filters.locator('[name="minAge"]').fill('10');
     await filters.locator('[name="maxAge"]').fill('14');
-    await page.getByRole('button', { name: 'Auswertung anzeigen →' }).click();
+    await page.getByRole('button', { name: 'Auswertung anzeigen' }).click();
     await reportReady();
     await page.locator('[data-weekday="2"]').click();
     await reportReady();
@@ -89,7 +89,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.locator('#clear-all-filters').click();
     await reportReady();
     await page.locator('#open-filters').click();
-    await page.getByRole('button', { name: 'Auswertung anzeigen →' }).click();
+    await page.getByRole('button', { name: 'Auswertung anzeigen' }).click();
     await page.locator('#filter-dialog').waitFor({ state: 'hidden' });
     await reportReady();
     await page.locator('[data-period="month"]').click();

@@ -58,6 +58,9 @@ public class HttpTests : IClassFixture<AppFactory>
         using var client=await Login("employee");
         Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/api/children?siteId=2")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/api/admin/users")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/Dashboard")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/reports",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{1}})).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/reports/export",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{1}})).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/reports/export",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{2}})).StatusCode);
     }
     [Fact] public async Task AdminCannotAccessChildrenWithoutMembership()

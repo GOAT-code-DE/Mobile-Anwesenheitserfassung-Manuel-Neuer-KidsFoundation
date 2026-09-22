@@ -1,8 +1,8 @@
 @page
 @{ ViewData["Title"] = "Heute"; ViewData["Page"] = "today"; }
-<div class="page-heading"><div><div class="eyebrow" id="today-date">UNSER TAG IM HAUS</div><h1>Wer ist heute da?</h1><p>Ein guter Tag beginnt mit einem Überblick.</p></div><button class="button primary" data-action="new-child">＋ Kind anlegen</button></div>
-<section class="today-summary"><div><span class="tag">HEUTE ERFASST</span><strong id="today-count">—</strong><span>Kinder haben uns heute besucht</span></div><div class="summary-aside"><span class="summary-symbol">✳</span><p>Jedes Kind zählt.<br /><strong>Jeder Besuch auch.</strong></p></div></section>
-<section class="panel search-panel"><label class="search-box"><span>⌕</span><input id="child-search" type="search" placeholder="Kind suchen und heute erfassen …" autocomplete="off" aria-label="Kind suchen" /><kbd>⌕</kbd></label><label class="check"><input id="include-inactive" type="checkbox" /> Inaktive Kinder einbeziehen</label></section>
+<div class="page-heading"><div><div class="eyebrow" id="today-date">UNSER TAG IM HAUS</div><h1>Wer ist heute da?</h1><p>Ein guter Tag beginnt mit einem Überblick.</p></div><button class="button primary" data-action="new-child">Kind anlegen</button></div>
+<section class="today-summary"><div><span class="tag">HEUTE ERFASST</span><strong id="today-count">—</strong><span>Kinder haben uns heute besucht</span></div></section>
+<section class="panel search-panel"><label class="search-box"><input id="child-search" type="search" placeholder="Kind suchen und heute erfassen …" autocomplete="off" aria-label="Kind suchen" /></label><label class="check"><input id="include-inactive" type="checkbox" /> Inaktive Kinder einbeziehen</label></section>
 <div class="section-heading"><h2 id="list-heading">Heute im Haus</h2><span class="muted" id="list-caption">Tagesanwesenheit</span></div>
 <div id="children-list" class="children-list" aria-live="polite"><div class="empty-state">Anwesenheiten werden geladen …</div></div>
 <partial name="_ChildDialog" />

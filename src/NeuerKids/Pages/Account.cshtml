@@ -25,8 +25,8 @@
     else
     {
         <p>Melde dich an, um Kinder zu erfassen und den Überblick zu behalten.</p>
-        <form method="post" asp-page-handler="Login" class="stack"><label>E-Mail-Adresse<input asp-for="Email" type="email" required autocomplete="username" /></label><label>Passwort<input asp-for="Password" type="password" required autocomplete="current-password" /></label><button class="button primary">Anmelden <span>→</span></button></form>
+        <form method="post" asp-page-handler="Login" class="stack"><label>E-Mail-Adresse<input asp-for="Email" type="email" required autocomplete="username" /></label><label>Passwort<input asp-for="Password" type="password" required autocomplete="current-password" /></label><button class="button primary">Anmelden</button></form>
         <p class="muted small">Passwort vergessen oder Handy verloren? Deine zentrale Administration kann dir einen neuen Aktivierungslink geben.</p>
-        @if (Model.Demo) { <div class="demo-entry"><span class="tag">NUR TESTDATEN</span><h2>Die App ausprobieren</h2><p>Alle Kinder und Anwesenheiten sind erfunden.</p><form method="post" asp-page-handler="Demo" class="stack"><button class="button primary" name="role" value="manager">Als Hausleitung starten →</button><div class="button-row"><button class="button" name="role" value="employee">Mitarbeitende</button><button class="button" name="role" value="admin">Administration</button></div></form></div> }
+        @if (Model.Demo) { <div class="demo-entry"><span class="tag">NUR TESTDATEN</span><h2>Die App ausprobieren</h2><p>Alle Kinder und Anwesenheiten sind erfunden.</p><form method="post" asp-page-handler="Demo" class="stack"><button class="button primary" name="role" value="manager">Als Hausleitung starten</button><div class="button-row"><button class="button" name="role" value="employee">Mitarbeitende</button><button class="button" name="role" value="admin">Administration</button></div></form></div> }
     }
 </div>

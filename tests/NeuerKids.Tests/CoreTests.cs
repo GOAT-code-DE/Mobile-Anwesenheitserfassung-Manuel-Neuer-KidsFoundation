@@ -68,30 +68,31 @@ public class CoreTests
     [Fact] public async Task DistinctChildrenAreNotAddedAcrossDays()
     {
         await using var t=new TestData();var c=await t.AddChild();foreach(var d in new[]{21,22,23})await t.AddVisit(c,new DateOnly(2026,9,d));
-        var report=await t.Reports.Build(t.Employee,new(new(2026,9,21),t.Today,[1],Compare:false));
+        var report=await t.Reports.Build(t.Manager,new(new(2026,9,21),t.Today,[1],Compare:false));
         Assert.Equal(3,report.Current.Metrics.Visits);Assert.Equal(1,report.Current.Metrics.Children);Assert.Equal(1,report.Current.Metrics.Average);
     }
     [Fact] public async Task NationalityOrFilterDoesNotDoubleCount()
     {
         await using var t=new TestData();var c=await t.AddChild(countries:["DE","TR"]);await t.AddVisit(c,t.Today);
-        var r=await t.Reports.Build(t.Employee,new(t.Today,t.Today,[1],Nationalities:["DE","TR"],Compare:false));
+        var r=await t.Reports.Build(t.Manager,new(t.Today,t.Today,[1],Nationalities:["DE","TR"],Compare:false));
         Assert.Equal(1,r.Current.Metrics.Visits);Assert.Equal(2,r.Current.Nationalities.Sum(x=>x.Value));
     }
     [Fact] public async Task AgeAtVisitAndCombinedFiltersAreCorrect()
     {
         await using var t=new TestData();var c=await t.AddChild();await t.AddVisit(c,new(2026,9,21));await t.AddVisit(c,new(2026,9,22));
-        var r=await t.Reports.Build(t.Employee,new(new(2026,9,21),t.Today,[1],MinAge:12,MaxAge:12,Genders:[Gender.Female],Nationalities:["DE"],Weekday:2,Compare:false));
+        var r=await t.Reports.Build(t.Manager,new(new(2026,9,21),t.Today,[1],MinAge:12,MaxAge:12,Genders:[Gender.Female],Nationalities:["DE"],Weekday:2,Compare:false));
         Assert.Equal(1,r.Current.Metrics.Visits);Assert.Equal(1,r.Current.Metrics.CalendarDays);Assert.Equal(1,r.Current.Metrics.Average);
     }
     [Fact] public async Task ZeroDaysCountInAverageAndWeekUsesSameWeekdays()
     {
         await using var t=new TestData();var c=await t.AddChild();await t.AddVisit(c,t.Today);
-        var r=await t.Reports.Build(t.Employee,new(new(2026,9,21),t.Today,[1],Preset:"week"));
+        var r=await t.Reports.Build(t.Manager,new(new(2026,9,21),t.Today,[1],Preset:"week"));
         Assert.Equal(.33,r.Current.Metrics.Average);Assert.Equal(new DateOnly(2026,9,14),r.Comparison!.Start);Assert.Equal(new DateOnly(2026,9,16),r.Comparison.End);
     }
     [Fact] public async Task StaffCannotReadOtherSiteAndAdminHasNoImplicitDataAccess()
     {
         await using var t=new TestData();Assert.Equal(403,(await Assert.ThrowsAsync<AppError>(()=>t.Access.Site(t.Employee,2))).Status);
+        await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today,[1])));
         await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today,[2])));
         await Assert.ThrowsAsync<AppError>(()=>t.Children.List(t.Admin,1,null,true));
     }
@@ -135,8 +136,8 @@ public class CoreTests
     }
     [Fact] public async Task InvalidFiltersAreRejected()
     {
-        await using var t=new TestData();await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today.AddDays(-1),[1])));
-        await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today,[1],MinAge:15,MaxAge:10)));
-        await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today,[1],Nationalities:["BAD"])));
+        await using var t=new TestData();await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Manager,new(t.Today,t.Today.AddDays(-1),[1])));
+        await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Manager,new(t.Today,t.Today,[1],MinAge:15,MaxAge:10)));
+        await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Manager,new(t.Today,t.Today,[1],Nationalities:["BAD"])));
     }
 }
