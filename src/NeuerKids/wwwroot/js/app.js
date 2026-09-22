@@ -86,7 +86,7 @@
       const active=document.activeElement===searchInput||searchInput.value.trim().length>0;
       $('#main').classList.toggle('searching-children',mobile&&active);
       clearTimeout(searchRevealTimer);
-      if(mobile&&document.activeElement===searchInput)searchRevealTimer=setTimeout(()=>$('.search-panel').scrollIntoView({block:'start',behavior:'smooth'}),260);
+      if(mobile&&document.activeElement===searchInput)searchRevealTimer=setTimeout(()=>$('.search-panel').scrollIntoView({block:'start',behavior:'auto'}),260);
     };
     searchInput.addEventListener('focus',revealResults);
     searchInput.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{renderChildren();revealResults();},100);});
