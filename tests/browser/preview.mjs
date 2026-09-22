@@ -23,14 +23,14 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     assert.ok(!/[\u2315\u2316\u25a5\u25f7\u260e\u2667\u2699\u2713\u2733\uff0b]/u.test(mobileStartLayout.text),`${name}: decorative symbol remains in the interface`);
     assert.equal(await page.locator('.nav-icon,.summary-symbol').count(),0);
     const search=page.getByLabel('Kind suchen');
-    await search.focus();await page.setViewportSize({width:390,height:430});await page.waitForTimeout(150);
+    await search.focus();await page.setViewportSize({width:390,height:430});await page.waitForTimeout(420);
     const searchPosition=async()=>search.evaluate(el=>({top:el.getBoundingClientRect().top,scrollY}));
     const positions=[await searchPosition()];await search.fill('Amira');await page.waitForTimeout(180);positions.push(await searchPosition());
     const searchSpacing=await search.evaluate(el=>{const style=getComputedStyle(el),box=el.getBoundingClientRect(),wrapper=el.closest('.search-box').getBoundingClientRect();return{left:parseFloat(style.paddingLeft),right:parseFloat(style.paddingRight),height:box.height,wrapperWidth:wrapper.width};});
     assert.ok(searchSpacing.left>=10&&searchSpacing.right>=38&&searchSpacing.height>=52&&searchSpacing.wrapperWidth>300,`${name}: search field has insufficient text or action spacing`);
     const found=page.locator('.child-row').filter({hasText:'Amira'});await found.waitFor();
-    const visibleResult=await found.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;});
-    assert.equal(visibleResult,true,`${name}: search result is hidden by the simulated phone keyboard`);
+    const visibleResult=await found.evaluate(el=>{const r=el.getBoundingClientRect();return{fullyVisible:r.top>=0&&r.bottom<=innerHeight,top:r.top,bottom:r.bottom,height:innerHeight};});
+    assert.equal(visibleResult.fullyVisible,true,`${name}: search result is hidden by the simulated phone keyboard: ${JSON.stringify(visibleResult)}`);
     assert.equal(await page.locator('#main').evaluate(el=>el.classList.contains('searching-children')),true);
     await search.fill('');await page.waitForTimeout(180);positions.push(await searchPosition());await search.fill('Amira');await page.waitForTimeout(180);positions.push(await searchPosition());await search.fill('');await page.waitForTimeout(180);positions.push(await searchPosition());
     assert.ok(Math.max(...positions.map(x=>x.top))-Math.min(...positions.map(x=>x.top))<=1.5,`${name}: search field jumps while entering or clearing text: ${JSON.stringify(positions)}`);
