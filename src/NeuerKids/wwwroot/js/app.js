@@ -37,7 +37,24 @@
   function setNav() {
     $$('[data-nav]').forEach(a => { const active = a.dataset.nav === page; a.classList.toggle('active',active); if(active) a.setAttribute('aria-current','page'); if(siteId) a.href = a.pathname + '?site=' + siteId; });
   }
-  document.addEventListener('click', e => { const close = e.target.closest('[data-close]'); if(close) document.getElementById(close.dataset.close).close(); });
+  let dialogScrollY = 0;
+  function syncDialogLock() {
+    const hasOpenDialog = !!$('dialog[open]');
+    if (hasOpenDialog && !document.body.classList.contains('dialog-open')) {
+      dialogScrollY = window.scrollY;
+      document.body.style.setProperty('--dialog-scroll-y', `${-dialogScrollY}px`);
+      document.body.classList.add('dialog-open');
+    } else if (!hasOpenDialog && document.body.classList.contains('dialog-open')) {
+      document.body.classList.remove('dialog-open');
+      document.body.style.removeProperty('--dialog-scroll-y');
+      window.scrollTo(0, dialogScrollY);
+    }
+  }
+  function openDialog(dialog) { dialog.showModal(); syncDialogLock(); }
+  function closeDialog(dialog) { if (dialog.open) dialog.close(); syncDialogLock(); }
+  document.addEventListener('click', e => { const close = e.target.closest('[data-close]'); if(close) closeDialog(document.getElementById(close.dataset.close)); });
+  document.addEventListener('close', syncDialogLock, true);
+  document.addEventListener('cancel', () => queueMicrotask(syncDialogLock), true);
   window.addEventListener('offline', () => toast('Keine Internetverbindung. Erfassungen können derzeit nicht gespeichert werden.',true));
   window.addEventListener('online', () => toast('Die Verbindung ist wieder da. Nicht bestätigte Erfassungen bitte erneut prüfen.'));
 
@@ -75,7 +92,7 @@
     form.elements.birthDate.max = session.today; form.elements.historyDay.value = session.today; form.elements.historyDay.max = session.today;
     countryPicker('child-countries',child?.nationalities ?? []); $('#duplicate-confirm').hidden = true; errorBox('#child-error','');
     $('#save-and-attend').hidden = !!child; $('#delete-section').hidden = !child || !manager(); $('#history-section').hidden = !child || !manager();
-    $('#child-dialog').showModal(); if(child && manager()) await loadHistory(id);
+    openDialog($('#child-dialog')); if(child && manager()) await loadHistory(id);
   }
   async function loadHistory(id) {
     try { const entries = await api(`/children/${id}/attendance`); $('#history-list').innerHTML = entries.length ? entries.map(a => `<div class="history-row"><span>${date(a.day)}</span><button class="button small-button" type="button" data-history-undo="${a.id}">Entfernen</button></div>`).join('') : '<p class="small muted">Noch keine Anwesenheiten.</p>'; }
@@ -83,8 +100,8 @@
   }
   function confirmAction(title,text,action) {
     $('#confirm-title').textContent = title; $('#confirm-text').textContent = text;
-    $('#confirm-action').onclick = e => busy(e.currentTarget,async()=>{ await action(); $('#confirm-dialog').close(); });
-    $('#confirm-dialog').showModal();
+    $('#confirm-action').onclick = e => busy(e.currentTarget,async()=>{ await action(); closeDialog($('#confirm-dialog')); });
+    openDialog($('#confirm-dialog'));
   }
   function initChildren() {
     if(page === 'today') $('#today-date').textContent = new Date(session.today + 'T12:00:00Z').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
@@ -110,9 +127,9 @@
           form.elements.id.value=saved.id;form.elements.revision.value=saved.revision;
           if(button.value==='attend') {
             try{await api(`/children/${saved.id}/attendance`,'POST',{day:session.today});}
-            catch(err){$('#child-dialog').close();await loadChildren();toast('Profil gespeichert; Anwesenheit noch nicht bestätigt. Bitte in der Liste prüfen. '+err.message,true);return;}
+            catch(err){closeDialog($('#child-dialog'));await loadChildren();toast('Profil gespeichert; Anwesenheit noch nicht bestätigt. Bitte in der Liste prüfen. '+err.message,true);return;}
           }
-          $('#child-dialog').close();toast(button.value==='attend'?'Kind angelegt und heute erfasst.':'Kinderdaten gespeichert.');await loadChildren();
+          closeDialog($('#child-dialog'));toast(button.value==='attend'?'Kind angelegt und heute erfasst.':'Kinderdaten gespeichert.');await loadChildren();
         } catch(err) {errorBox('#child-error',err.message); if(err.status===409 && err.message.includes('existiert'))$('#duplicate-confirm').hidden=false;}
       });
       form.dataset.saving='false';
@@ -121,7 +138,7 @@
     $('[data-action="backfill"]').addEventListener('click',e=>busy(e.currentTarget,async()=>{const f=$('#child-form');await api(`/children/${f.elements.id.value}/attendance`,'POST',{day:f.elements.historyDay.value});await loadHistory(f.elements.id.value);await loadChildren();f.elements.revision.value=children.find(c=>c.id===f.elements.id.value)?.revision||f.elements.revision.value;toast('Anwesenheit gespeichert.');}));
     for(const preserve of [false,true]) $(`[data-action="${preserve?'delete-preserve':'delete-invalid'}"]`).addEventListener('click',()=>{
       const id=$('#child-form').elements.id.value;
-      confirmAction(preserve?'Personendaten endgültig löschen?':'Fehlanlage endgültig entfernen?',preserve?'Profil, Notfallkontakt und zuordenbare Anwesenheiten werden gelöscht. Nur anonyme Monatssummen bleiben. Diese Aktion kann nicht rückgängig gemacht werden.':'Das Profil und sämtliche zugehörigen Besuche werden auch aus den Auswertungen entfernt. Diese Aktion kann nicht rückgängig gemacht werden.',async()=>{await api(`/children/${id}?preserve=${preserve}`,'DELETE');$('#child-dialog').close();await loadChildren();toast('Profil entfernt.');});
+      confirmAction(preserve?'Personendaten endgültig löschen?':'Fehlanlage endgültig entfernen?',preserve?'Profil, Notfallkontakt und zuordenbare Anwesenheiten werden gelöscht. Nur anonyme Monatssummen bleiben. Diese Aktion kann nicht rückgängig gemacht werden.':'Das Profil und sämtliche zugehörigen Besuche werden auch aus den Auswertungen entfernt. Diese Aktion kann nicht rückgängig gemacht werden.',async()=>{await api(`/children/${id}?preserve=${preserve}`,'DELETE');closeDialog($('#child-dialog'));await loadChildren();toast('Profil entfernt.');});
     });
     loadChildren();
   }
@@ -187,7 +204,7 @@
     $('#filter-sites').innerHTML=session.sites.map(s=>`<label class="check"><input name="site" type="checkbox" value="${s.siteId}" ${filter.siteIds.includes(s.siteId)?'checked':''} /> ${esc(s.name)}</label>`).join('');
     f.elements.comparison.value=!filter.compare?'none':filter.compareStart?'custom':'previous';const custom=f.elements.comparison.value==='custom';$('#comparison-dates').hidden=!custom;
     for(const name of ['compareStart','compareEnd'])f.elements[name].required=custom;
-    countryPicker('filter-countries',filter.nationalities);$('#filter-dialog').showModal();
+    countryPicker('filter-countries',filter.nationalities);openDialog($('#filter-dialog'));
   }
   function initDashboard() {
     filter=baseFilter();$('#open-filters').addEventListener('click',openFilters);
@@ -221,14 +238,14 @@
       loadReport();
     });
     $('#filter-form').elements.comparison.addEventListener('change',e=>{const custom=e.target.value==='custom';$('#comparison-dates').hidden=!custom;for(const name of ['compareStart','compareEnd'])$('#filter-form').elements[name].required=custom;});
-    $('#reset-filters').addEventListener('click',()=>{filter=baseFilter();timeSelection=null;$('#filter-dialog').close();$('#chart-grouping').value='day';loadReport();});
+    $('#reset-filters').addEventListener('click',()=>{filter=baseFilter();timeSelection=null;closeDialog($('#filter-dialog'));$('#chart-grouping').value='day';loadReport();});
     $('#filter-form').addEventListener('submit',e=>{
       e.preventDefault();const f=e.currentTarget;const get=n=>f.elements[n].value;const sites=$$('input[name=site]:checked',f).map(i=>Number(i.value));
       if(!sites.length){toast('Bitte mindestens einen Standort auswählen.',true);return;}
       const datesChanged=get('start')!==filter.start||get('end')!==filter.end;
       if(datesChanged)timeSelection=null;
       Object.assign(filter,{start:get('start'),end:get('end'),preset:datesChanged?'custom':filter.preset,siteIds:sites,minAge:get('minAge')===''?null:Number(get('minAge')),maxAge:get('maxAge')===''?null:Number(get('maxAge')),genders:$$('input[name=gender]:checked',f).map(i=>i.value),nationalities:[...countrySets['filter-countries']],weekday:get('weekday')===''?null:Number(get('weekday')),compare:get('comparison')!=='none',compareStart:get('comparison')==='custom'?get('compareStart'):null,compareEnd:get('comparison')==='custom'?get('compareEnd'):null});
-      $('#filter-dialog').close();loadReport();
+      closeDialog($('#filter-dialog'));loadReport();
     });
     $('#export-button').addEventListener('click',e=>busy(e.currentTarget,async()=>{if(!report)return;const blob=await api('/reports/export','POST',report.filter,true);const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`NeuerKids-Auswertung-${report.filter.start}-${report.filter.end}.xlsx`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Excel-Auswertung heruntergeladen.');}));
     loadReport();
@@ -245,20 +262,20 @@
     f.elements.isAdmin.checked=u?.isAdmin||false;f.elements.isBlocked.checked=u?.isBlocked||false;
     for(const site of [1,2])f.elements['site'+site].value=u?.isAdmin?'':u?.sites.find(s=>s.siteId===site)?.role||'';
     syncAdminRights(f);
-    $('#user-dialog-title').textContent=u?'Zugang verwalten':'Mitarbeitende einladen';$('#blocked-control').hidden=!u;$('#reset-controls').hidden=!u;errorBox('#user-error','');$('#user-dialog').showModal();
+    $('#user-dialog-title').textContent=u?'Zugang verwalten':'Mitarbeitende einladen';$('#blocked-control').hidden=!u;$('#reset-controls').hidden=!u;errorBox('#user-error','');openDialog($('#user-dialog'));
   }
   function syncAdminRights(form) {
     const admin=form.elements.isAdmin.checked;
     $('#admin-rights-note').hidden=!admin;$('#site-rights').hidden=admin;
     for(const site of [1,2])form.elements['site'+site].disabled=admin;
   }
-  function showActivation(path) {$('#user-dialog').close();$('#activation-link').value=location.origin+path;$('#activation-dialog').showModal();}
+  function showActivation(path) {closeDialog($('#user-dialog'));$('#activation-link').value=location.origin+path;openDialog($('#activation-dialog'));}
   function initAdmin() {
     if(!session.isAdmin){$('#invite-button').hidden=true;errorBox('#admin-error','Dieser Bereich ist der zentralen Administration vorbehalten.');return;}
     $('#invite-button').addEventListener('click',()=>openUser());
     $('#user-form').elements.isAdmin.addEventListener('change',e=>syncAdminRights(e.currentTarget.form));
     $('#users-list').addEventListener('click',e=>{const b=e.target.closest('[data-user]');if(b)openUser(b.dataset.user);});
-    $('#user-form').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;busy(e.submitter,async()=>{const sites=[1,2].filter(id=>f.elements['site'+id].value).map(id=>({siteId:id,role:f.elements['site'+id].value}));const payload={name:f.elements.name.value,email:f.elements.email.value,isAdmin:f.elements.isAdmin.checked,isBlocked:f.elements.isBlocked.checked,sites};try{const result=await api('/admin/users'+(f.elements.id.value?'/'+f.elements.id.value:''),f.elements.id.value?'PUT':'POST',payload);if(result?.activationPath)showActivation(result.activationPath);else{$('#user-dialog').close();toast('Zugangsrechte gespeichert. Bestehende Sitzungen wurden beendet.');}await loadUsers();}catch(err){errorBox('#user-error',err.message);}});});
+    $('#user-form').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;busy(e.submitter,async()=>{const sites=[1,2].filter(id=>f.elements['site'+id].value).map(id=>({siteId:id,role:f.elements['site'+id].value}));const payload={name:f.elements.name.value,email:f.elements.email.value,isAdmin:f.elements.isAdmin.checked,isBlocked:f.elements.isBlocked.checked,sites};try{const result=await api('/admin/users'+(f.elements.id.value?'/'+f.elements.id.value:''),f.elements.id.value?'PUT':'POST',payload);if(result?.activationPath)showActivation(result.activationPath);else{closeDialog($('#user-dialog'));toast('Zugangsrechte gespeichert. Bestehende Sitzungen wurden beendet.');}await loadUsers();}catch(err){errorBox('#user-error',err.message);}});});
     $('#copy-activation').addEventListener('click',e=>busy(e.currentTarget,async()=>{await navigator.clipboard.writeText($('#activation-link').value);toast('Aktivierungslink kopiert.');}));
     for(const reset of [false,true])$(`[data-action="${reset?'reset-mfa':'reset-password'}"]`).addEventListener('click',e=>busy(e.currentTarget,async()=>{const result=await api(`/admin/users/${$('#user-form').elements.id.value}/reset`,'POST',{resetAuthenticator:reset});showActivation(result.activationPath);await loadUsers();}));
     $('#activation-dialog').addEventListener('close',()=>$('#activation-link').value='');
