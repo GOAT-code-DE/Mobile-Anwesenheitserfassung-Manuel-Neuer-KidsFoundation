@@ -18,6 +18,8 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     assert.equal(await page.locator('#today-count').innerText(),'14');
     const search=page.getByLabel('Kind suchen');
     await search.focus();await page.setViewportSize({width:390,height:430});await search.fill('Amira');await page.waitForTimeout(450);
+    const searchSpacing=await search.evaluate(el=>{const style=getComputedStyle(el),box=el.getBoundingClientRect(),wrapper=el.closest('.search-box').getBoundingClientRect();return{left:parseFloat(style.paddingLeft),right:parseFloat(style.paddingRight),height:box.height,wrapperWidth:wrapper.width};});
+    assert.ok(searchSpacing.left>=10&&searchSpacing.right>=38&&searchSpacing.height>=52&&searchSpacing.wrapperWidth>300,`${name}: search field has insufficient text or action spacing`);
     const found=page.locator('.child-row').filter({hasText:'Amira'});await found.waitFor();
     const visibleResult=await found.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;});
     assert.equal(visibleResult,true,`${name}: search result is hidden by the simulated phone keyboard`);
