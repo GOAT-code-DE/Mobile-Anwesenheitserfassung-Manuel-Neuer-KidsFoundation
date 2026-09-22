@@ -38,7 +38,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     assert.ok(Math.max(...positions.map(x=>x.scrollY))-Math.min(...positions.map(x=>x.scrollY))<=1.5,`${name}: page scroll jumps while entering or clearing text: ${JSON.stringify(positions)}`);
     assert.equal(await page.locator('#main').evaluate(el=>el.classList.contains('searching-children')),false);
     await search.fill('Elif');const quickCheckIn=page.locator('.quick-child').filter({hasText:'Elif'});await quickCheckIn.waitFor();assert.ok(await quickCheckIn.getAttribute('data-attend'),`${name}: quick result is not directly actionable`);await quickCheckIn.click();await page.locator('.quick-child:disabled').filter({hasText:'Elif'}).waitFor();
-    await search.fill('');await page.setViewportSize({width:390,height:844});const checkedIn=page.locator('.child-row').filter({hasText:'Elif'});await checkedIn.locator('[data-undo]').click();await checkedIn.locator('[data-attend]').waitFor();
+    await search.fill('');await page.setViewportSize({width:390,height:844});const checkedIn=page.locator('.child-row').filter({hasText:'Elif'});await checkedIn.locator('[data-undo]').click();await checkedIn.waitFor({state:'hidden'});await search.fill('Elif');const undoneQuick=page.locator('.quick-child').filter({hasText:'Elif'});await undoneQuick.waitFor();assert.ok(await undoneQuick.getAttribute('data-attend'),`${name}: undone child is not actionable again`);await search.fill('');
     await page.getByLabel('Aktueller Standort').selectOption('2');await ready();
     assert.equal(await page.getByLabel('Aktueller Standort').inputValue(),'2');
     await page.locator('[data-nav="children"]').click();await ready();
