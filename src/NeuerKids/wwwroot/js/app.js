@@ -10,7 +10,7 @@
   const iso = d => d.toISOString().slice(0,10);
   const addDays = (value, days) => { const d = new Date(value + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return iso(d); };
   const weekday = value => new Date(value + 'T12:00:00Z').getUTCDay();
-  let session, siteId, children = [], toastTimer, filter, report, queryVersion = 0, searchTimer, focusScrollTimer, timeSelection = null;
+  let session, siteId, children = [], toastTimer, filter, report, queryVersion = 0, timeSelection = null;
   const countrySets = {};
 
   async function api(path, method = 'GET', data, blob = false) {
@@ -53,12 +53,20 @@
     const search = $('#child-search').value.trim().toLocaleLowerCase('de-DE');
     let list = children.filter(c => `${c.firstName} ${c.lastName}`.toLocaleLowerCase('de-DE').includes(search));
     if(page === 'today') {
+      renderQuickResults(list,search);
       $('#today-count').textContent = children.filter(c => c.present).length;
       $('#list-heading').textContent = search || $('#include-inactive').checked ? 'Kinder finden' : 'Heute im Haus';
       if(!search && !$('#include-inactive').checked) list = list.filter(c => c.present);
     }
     $('#list-caption').textContent = `${list.length} ${list.length === 1 ? 'Kind' : 'Kinder'}`;
     $('#children-list').innerHTML = list.length ? list.map(c => `<article class="child-row"><div class="child-avatar" aria-hidden="true">${esc(c.firstName[0] + c.lastName[0])}</div><div class="child-main"><button type="button" data-edit="${c.id}">${esc(c.firstName)} ${esc(c.lastName)}</button><div class="child-meta"><span>${c.age} Jahre</span><span>·</span><span>${date(c.birthDate)}</span>${c.inactive ? '<span class="archive-badge">Inaktiv</span>' : ''}</div>${c.contactPhone ? `<a class="contact-link" href="tel:${esc(c.contactPhone.replace(/[^+0-9]/g,''))}">${esc(c.contactName)} · ${esc(c.contactPhone)}</a>` : ''}</div><div class="child-actions">${c.present ? `<span class="presence-badge">Heute erfasst</span>${c.canUndo ? `<button type="button" class="button small-button" data-undo="${c.attendanceId}" aria-label="Anwesenheit von ${esc(c.firstName)} zurücknehmen">Zurücknehmen</button>` : ''}` : `<button type="button" class="button small-button primary" data-attend="${c.id}">Heute erfassen</button>`}<button type="button" class="button small-button" data-edit="${c.id}" aria-label="Profil von ${esc(c.firstName)} bearbeiten">Bearbeiten</button></div></article>`).join('') : `<div class="empty-state">${search ? 'Kein passendes Kind gefunden. Prüfe die Schreibweise oder beziehe inaktive Kinder ein.' : page === 'today' ? 'Noch kein Kind für heute erfasst. Suche oben nach einem Namen oder lege ein neues Kind an.' : 'Hier sind noch keine Kinder angelegt.'}</div>`;
+  }
+  function renderQuickResults(matches,search) {
+    const root=$('#quick-results');if(!root)return;
+    const active=matchMedia('(max-width:760px)').matches&&search.length>0;
+    $('#main').classList.toggle('searching-children',active);root.hidden=!active;if(!active){root.innerHTML='';return;}
+    const visible=matches.slice(0,5);
+    root.innerHTML=visible.length?visible.map(c=>`<button type="button" class="quick-child" ${c.present?'disabled':`data-attend="${c.id}"`} aria-label="${esc(c.firstName)} ${esc(c.lastName)}${c.present?' ist heute erfasst':' heute erfassen'}"><span class="quick-child-main"><strong>${esc(c.firstName)} ${esc(c.lastName)}</strong><small>${c.age} Jahre · ${date(c.birthDate)}</small></span><span class="quick-action">${c.present?'Heute erfasst':'Antippen zum Erfassen'}</span></button>`).join(''):'<div class="quick-empty">Kein passendes Kind gefunden.</div>';
   }
   async function openChild(id) {
     const child = children.find(c => c.id === id); const form = $('#child-form'); form.reset();
@@ -81,10 +89,7 @@
   function initChildren() {
     if(page === 'today') $('#today-date').textContent = new Date(session.today + 'T12:00:00Z').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
     const searchInput=$('#child-search');
-    const updateSearchLayout=()=>$('#main').classList.toggle('searching-children',matchMedia('(max-width:760px)').matches&&(document.activeElement===searchInput||searchInput.value.trim().length>0));
-    searchInput.addEventListener('focus',()=>{if(!matchMedia('(max-width:760px)').matches)return;updateSearchLayout();clearTimeout(focusScrollTimer);focusScrollTimer=setTimeout(()=>$('.search-panel').scrollIntoView({block:'start',behavior:'auto'}),300);});
-    searchInput.addEventListener('input',()=>{updateSearchLayout();clearTimeout(searchTimer);searchTimer=setTimeout(renderChildren,80);});
-    searchInput.addEventListener('blur',()=>setTimeout(updateSearchLayout));
+    searchInput.addEventListener('input',renderChildren);
     $('#include-inactive').addEventListener('change',loadChildren);
     $$('[data-action="new-child"]').forEach(b=>b.addEventListener('click',()=>openChild()));
     $('#children-list').addEventListener('click',e=>{
@@ -94,6 +99,7 @@
       if(b.dataset.attend) busy(b,async()=>{const result=await api(`/children/${b.dataset.attend}/attendance`,'POST',{day:session.today});toast(result.alreadyPresent?'Das Kind war bereits erfasst.':'Für heute erfasst.');await loadChildren();});
       if(b.dataset.undo) busy(b,async()=>{await api(`/attendance/${b.dataset.undo}`,'DELETE');toast('Anwesenheit zurückgenommen.');await loadChildren();});
     });
+    $('#quick-results')?.addEventListener('click',e=>{const b=e.target.closest('[data-attend]');if(b)busy(b,async()=>{const result=await api(`/children/${b.dataset.attend}/attendance`,'POST',{day:session.today});toast(result.alreadyPresent?'Das Kind war bereits erfasst.':'Für heute erfasst.');await loadChildren();});});
     $('#child-form').addEventListener('submit',async e=>{
       e.preventDefault();const form=e.currentTarget;const button=e.submitter;if(form.dataset.saving==='true')return;form.dataset.saving='true';
       await busy(button,async()=>{
