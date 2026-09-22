@@ -26,7 +26,7 @@
   function errorBox(selector, message) { const el = $(selector); el.hidden = !message; el.textContent = message || ''; }
   async function busy(button, action) { if (button.disabled) return; button.disabled = true; try { await action(); } catch(e) { toast(e.message,true); } finally { button.disabled = false; } }
   function countryName(code) { return session.countries.find(c => c.code === code)?.name || code; }
-  function manager() { return session.sites.find(s => s.siteId === siteId)?.role === 'Manager'; }
+  function manager() { return session.isAdmin || session.sites.find(s => s.siteId === siteId)?.role === 'Manager'; }
   function countryPicker(id, values = []) {
     const root = document.getElementById(id); countrySets[id] = new Set(values);
     root.innerHTML = `<select aria-label="${id === 'child-countries' ? 'Staatsangehörigkeit hinzufügen' : 'Staatsangehörigkeit filtern'}"><option value="">Land auswählen …</option>${session.countries.map(c => `<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('')}</select><div class="country-tags"></div>`;
@@ -236,20 +236,27 @@
 
   let accounts=[];
   async function loadUsers() {
-    try{accounts=await api('/admin/users');$('#users-list').innerHTML=accounts.map(u=>`<article class="child-row"><div class="child-avatar">${esc(u.displayName.slice(0,2).toUpperCase())}</div><div class="child-main"><button data-user="${esc(u.id)}">${esc(u.displayName)}</button><div class="child-meta">${esc(u.email)} ${u.isBlocked?'<span class="archive-badge">Gesperrt</span>':''}</div><div class="child-meta">${u.isAdmin?'Zentrale Administration · ':''}${u.sites.map(s=>`${s.siteId===1?'Gelsenkirchen':'Bottrop'}: ${s.role==='Manager'?'Hausleitung':'Mitarbeitende'}`).join(' · ')||(!u.isAdmin?'Kein Standortzugriff':'')}</div></div><button class="button small-button" data-user="${esc(u.id)}">Verwalten</button></article>`).join('');}
+    try{accounts=await api('/admin/users');$('#users-list').innerHTML=accounts.map(u=>`<article class="child-row"><div class="child-avatar">${esc(u.displayName.slice(0,2).toUpperCase())}</div><div class="child-main"><button data-user="${esc(u.id)}">${esc(u.displayName)}</button><div class="child-meta">${esc(u.email)} ${u.isBlocked?'<span class="archive-badge">Gesperrt</span>':''}</div><div class="child-meta">${u.isAdmin?'Zentrale Administration · Alle Standorte · Volle Rechte':u.sites.map(s=>`${s.siteId===1?'Gelsenkirchen':'Bottrop'}: ${s.role==='Manager'?'Hausleitung':'Mitarbeitende'}`).join(' · ')||'Kein Standortzugriff'}</div></div><button class="button small-button" data-user="${esc(u.id)}">Verwalten</button></article>`).join('');}
     catch(e){errorBox('#admin-error',e.message);}
   }
   function openUser(id) {
     const u=accounts.find(u=>u.id===id),f=$('#user-form');f.reset();f.elements.id.value=id||'';
     f.elements.name.value=u?.displayName||'';f.elements.email.value=u?.email||'';f.elements.name.disabled=!!u;f.elements.email.disabled=!!u;
     f.elements.isAdmin.checked=u?.isAdmin||false;f.elements.isBlocked.checked=u?.isBlocked||false;
-    for(const site of [1,2])f.elements['site'+site].value=u?.sites.find(s=>s.siteId===site)?.role||'';
+    for(const site of [1,2])f.elements['site'+site].value=u?.isAdmin?'':u?.sites.find(s=>s.siteId===site)?.role||'';
+    syncAdminRights(f);
     $('#user-dialog-title').textContent=u?'Zugang verwalten':'Mitarbeitende einladen';$('#blocked-control').hidden=!u;$('#reset-controls').hidden=!u;errorBox('#user-error','');$('#user-dialog').showModal();
+  }
+  function syncAdminRights(form) {
+    const admin=form.elements.isAdmin.checked;
+    $('#admin-rights-note').hidden=!admin;$('#site-rights').hidden=admin;
+    for(const site of [1,2])form.elements['site'+site].disabled=admin;
   }
   function showActivation(path) {$('#user-dialog').close();$('#activation-link').value=location.origin+path;$('#activation-dialog').showModal();}
   function initAdmin() {
     if(!session.isAdmin){$('#invite-button').hidden=true;errorBox('#admin-error','Dieser Bereich ist der zentralen Administration vorbehalten.');return;}
     $('#invite-button').addEventListener('click',()=>openUser());
+    $('#user-form').elements.isAdmin.addEventListener('change',e=>syncAdminRights(e.currentTarget.form));
     $('#users-list').addEventListener('click',e=>{const b=e.target.closest('[data-user]');if(b)openUser(b.dataset.user);});
     $('#user-form').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;busy(e.submitter,async()=>{const sites=[1,2].filter(id=>f.elements['site'+id].value).map(id=>({siteId:id,role:f.elements['site'+id].value}));const payload={name:f.elements.name.value,email:f.elements.email.value,isAdmin:f.elements.isAdmin.checked,isBlocked:f.elements.isBlocked.checked,sites};try{const result=await api('/admin/users'+(f.elements.id.value?'/'+f.elements.id.value:''),f.elements.id.value?'PUT':'POST',payload);if(result?.activationPath)showActivation(result.activationPath);else{$('#user-dialog').close();toast('Zugangsrechte gespeichert. Bestehende Sitzungen wurden beendet.');}await loadUsers();}catch(err){errorBox('#user-error',err.message);}});});
     $('#copy-activation').addEventListener('click',e=>busy(e.currentTarget,async()=>{await navigator.clipboard.writeText($('#activation-link').value);toast('Aktivierungslink kopiert.');}));
@@ -260,7 +267,7 @@
   async function init() {
     if(page==='account'||!$('#site-picker'))return;
     try{
-      session=await api('/session');const preferred=Number(new URLSearchParams(location.search).get('site'));const reportSites=session.sites.filter(s=>s.role==='Manager');const pageSites=page==='dashboard'?reportSites:session.sites;siteId=pageSites.find(s=>s.siteId===preferred)?.siteId||pageSites[0]?.siteId;
+      session=await api('/session');const preferred=Number(new URLSearchParams(location.search).get('site'));const reportSites=session.isAdmin?session.sites:session.sites.filter(s=>s.role==='Manager');const pageSites=page==='dashboard'?reportSites:session.sites;siteId=pageSites.find(s=>s.siteId===preferred)?.siteId||pageSites[0]?.siteId;
       $('#user-name').textContent=session.displayName;$('#admin-nav').hidden=!session.isAdmin;$('#dashboard-nav').hidden=!reportSites.length;
       $('#site-picker').innerHTML=pageSites.length?pageSites.map(s=>`<option value="${s.siteId}">${esc(s.name)}</option>`).join(''):'<option>Administration</option>';$('#site-picker').value=siteId||'';$('#site-picker').disabled=pageSites.length<2;
       $('#site-picker').addEventListener('change',e=>{siteId=Number(e.target.value);setNav();if(page==='dashboard'){filter.siteIds=[siteId];loadReport();}if(page==='today'||page==='children')loadChildren();});

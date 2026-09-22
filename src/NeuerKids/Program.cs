@@ -94,7 +94,10 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapGet("/session", async (HttpContext ctx, AppDbContext db, Access access, BerlinClock clock) => {
     var user = await access.User(ctx.User);
-    return Results.Ok(new { user.DisplayName, user.IsAdmin, Demo = demo, Today = clock.Today, Sites = await db.Memberships.Where(m => m.UserId == user.Id).Select(m => new { m.SiteId, m.Site.Name, m.Role }).ToArrayAsync(), Countries = CountryCatalog.All.OrderBy(x => x.Value).Select(x => new { Code = x.Key, Name = x.Value }) });
+    var sites = user.IsAdmin
+        ? await db.Sites.OrderBy(s => s.Id).Select(s => new { SiteId = s.Id, s.Name, Role = SiteRole.Manager }).ToArrayAsync()
+        : await db.Memberships.Where(m => m.UserId == user.Id).OrderBy(m => m.SiteId).Select(m => new { m.SiteId, m.Site.Name, m.Role }).ToArrayAsync();
+    return Results.Ok(new { user.DisplayName, user.IsAdmin, Demo = demo, Today = clock.Today, Sites = sites, Countries = CountryCatalog.All.OrderBy(x => x.Value).Select(x => new { Code = x.Key, Name = x.Value }) });
 });
 api.MapGet("/children", (HttpContext ctx, ChildrenService service, int siteId, string? search, bool inactive = false) => service.List(ctx.User, siteId, search, inactive));
 api.MapPost("/children", (HttpContext ctx, ChildrenService service, ChildInput input) => service.Save(ctx.User, null, input));
@@ -109,7 +112,8 @@ api.MapGet("/admin/users", async (HttpContext ctx, Access access, AppDbContext d
     await access.Admin(ctx.User);
     var accounts = await db.Users.OrderBy(u => u.DisplayName).ToListAsync();
     var memberships = await db.Memberships.ToListAsync();
-    return Results.Ok(accounts.Select(u => new { u.Id, u.Email, u.DisplayName, u.IsAdmin, u.IsBlocked, u.TwoFactorEnabled, Sites = memberships.Where(m => m.UserId == u.Id).Select(m => new { m.SiteId, m.Role }) }));
+    var allSites = await db.Sites.OrderBy(s => s.Id).Select(s => new { SiteId = s.Id, Role = SiteRole.Manager }).ToArrayAsync();
+    return Results.Ok(accounts.Select(u => new { u.Id, u.Email, u.DisplayName, u.IsAdmin, u.IsBlocked, u.TwoFactorEnabled, Sites = u.IsAdmin ? allSites : memberships.Where(m => m.UserId == u.Id).Select(m => new { m.SiteId, m.Role }).ToArray() }));
 });
 api.MapPost("/admin/users", async (HttpContext ctx, Access access, AppDbContext db, UserManager<AppUser> users, ChildrenService audit, InviteInput input) => {
     var actor = await access.Admin(ctx.User);
@@ -118,7 +122,7 @@ api.MapPost("/admin/users", async (HttpContext ctx, Access access, AppDbContext 
     var user = new AppUser { Email = input.Email.Trim(), UserName = input.Email.Trim(), DisplayName = input.Name.Trim(), IsAdmin = input.IsAdmin, EmailConfirmed = false };
     var result = await users.CreateAsync(user);
     if (!result.Succeeded) throw new AppError(400, "Der Zugang konnte nicht angelegt werden. Möglicherweise ist die E-Mail-Adresse bereits vergeben.");
-    db.Memberships.AddRange(input.Sites.Select(s => new Membership { SiteId = s.SiteId, Role = s.Role, UserId = user.Id }));
+    if (!input.IsAdmin) db.Memberships.AddRange(input.Sites.Select(s => new Membership { SiteId = s.SiteId, Role = s.Role, UserId = user.Id }));
     audit.Audit(actor.Id, null, "account.invited", null); await db.SaveChangesAsync();
     return Results.Ok(new { activationPath = await ActivationPath(users, user) });
 });
@@ -129,7 +133,7 @@ api.MapPut("/admin/users/{id}", async (HttpContext ctx, Access access, AppDbCont
     await using var transaction = await db.Database.BeginTransactionAsync();
     user.IsBlocked = input.IsBlocked; user.IsAdmin = input.IsAdmin;
     db.Memberships.RemoveRange(await db.Memberships.Where(m => m.UserId == id).ToListAsync()); await db.SaveChangesAsync();
-    db.Memberships.AddRange(input.Sites.Select(s => new Membership { SiteId = s.SiteId, Role = s.Role, UserId = id }));
+    if (!input.IsAdmin) db.Memberships.AddRange(input.Sites.Select(s => new Membership { SiteId = s.SiteId, Role = s.Role, UserId = id }));
     var result = await users.UpdateSecurityStampAsync(user);
     if (!result.Succeeded) throw new AppError(409, "Zugang konnte nicht aktualisiert werden.");
     audit.Audit(actor.Id, null, "account.permissions.updated", null); await db.SaveChangesAsync(); await transaction.CommitAsync(); return Results.NoContent();

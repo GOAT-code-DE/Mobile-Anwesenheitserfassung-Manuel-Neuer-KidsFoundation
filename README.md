@@ -20,7 +20,7 @@ Voraussetzung: [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10.0).
 bash scripts/run-demo.sh
 ```
 
-Anschließend `http://127.0.0.1:5080` öffnen und einen der ausdrücklich markierten Demo-Zugänge wählen. Die Hausleitung kann beide Standorte und die Auswertungen nutzen. Mitarbeitende erfassen Kinder in Gelsenkirchen und sehen keine Auswertungen. Die zentrale Administration hat zunächst keinen Zugriff auf Kinderdaten.
+Anschließend `http://127.0.0.1:5080` öffnen und einen der ausdrücklich markierten Demo-Zugänge wählen. Die Hausleitung kann beide Standorte und die Auswertungen nutzen. Mitarbeitende erfassen Kinder in Gelsenkirchen und sehen keine Auswertungen. Die zentrale Administration hat automatisch volle Rechte für alle Standorte.
 
 Windows/PowerShell:
 

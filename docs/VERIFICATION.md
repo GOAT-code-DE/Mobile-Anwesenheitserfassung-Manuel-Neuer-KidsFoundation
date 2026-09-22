@@ -3,7 +3,7 @@
 ## Durchgeführt
 
 - .NET 10 Release-Build und Veröffentlichungspaket erfolgreich, Compilerwarnungen als Fehler behandelt.
-- 27 automatisierte Fach- und HTTP-Tests erfolgreich. Enthalten: Standortrechte, Administration ohne implizite Kinderdatenrechte, CSRF, parallele/idempotente Anwesenheit, Dubletten, Bearbeitungskonflikte, Jahres- und Archivgrenzen, Geburtstage, deutsche Mitternacht/Sommerzeit, Filter und Zählregeln, eingeschränkte Statistik nach Löschung, XLSX ohne Kinderdaten.
+- Automatisierte Fach- und HTTP-Tests prüfen Standortrechte, den globalen Vollzugriff der Administration, CSRF, parallele/idempotente Anwesenheit, Dubletten, Bearbeitungskonflikte, Jahres- und Archivgrenzen, Geburtstage, deutsche Mitternacht/Sommerzeit, Filter und Zählregeln, eingeschränkte Statistik nach Löschung sowie XLSX ohne Kinderdaten.
 - Vollständiger Einladungsablauf mit Passwort, Authenticator-Einrichtung, Wiederherstellungscodes und sofortiger Sitzungssperrung durch die Administration im HTTP-Test geprüft.
 - Abhängigkeitsprüfung mit `dotnet list src/NeuerKids/NeuerKids.csproj package --vulnerable --include-transitive`: keine bekannten anfälligen Pakete laut NuGet-Quelle zum Prüfzeitpunkt.
 - SQL-Server-Migration und idempotentes SQL-Skript erfolgreich erzeugt. Kein Unterschied zwischen Datenmodell und Migration.

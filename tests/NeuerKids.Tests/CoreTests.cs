@@ -89,12 +89,16 @@ public class CoreTests
         var r=await t.Reports.Build(t.Manager,new(new(2026,9,21),t.Today,[1],Preset:"week"));
         Assert.Equal(.33,r.Current.Metrics.Average);Assert.Equal(new DateOnly(2026,9,14),r.Comparison!.Start);Assert.Equal(new DateOnly(2026,9,16),r.Comparison.End);
     }
-    [Fact] public async Task StaffCannotReadOtherSiteAndAdminHasNoImplicitDataAccess()
+    [Fact] public async Task EmployeesStayScopedAndAdministrationHasGlobalManagerAccess()
     {
         await using var t=new TestData();Assert.Equal(403,(await Assert.ThrowsAsync<AppError>(()=>t.Access.Site(t.Employee,2))).Status);
         await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today,[1])));
         await Assert.ThrowsAsync<AppError>(()=>t.Reports.Build(t.Employee,new(t.Today,t.Today,[2])));
-        await Assert.ThrowsAsync<AppError>(()=>t.Children.List(t.Admin,1,null,true));
+        var child=await t.AddChild(2);await t.Children.Attend(t.Admin,child.Id,t.Today.AddDays(-1));
+        var grant=await t.Access.Site(t.Admin,2,true);Assert.Equal(SiteRole.Manager,grant.Role);
+        await t.Children.List(t.Admin,1,null,true);await t.Children.List(t.Admin,2,null,true);
+        var report=await t.Reports.Build(t.Admin,new(t.Today.AddDays(-1),t.Today,[1,2],Compare:false));Assert.Equal(1,report.Current.Metrics.Visits);
+        await t.Children.Delete(t.Admin,child.Id,false);Assert.Empty(t.Db.Children);
     }
     [Fact] public async Task RepeatAttendanceIsIdempotentAndDatabaseEnforcesUniqueness()
     {

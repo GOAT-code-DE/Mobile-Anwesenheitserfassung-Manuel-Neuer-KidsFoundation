@@ -56,7 +56,7 @@ Die erste Administration entsteht einmalig mit gesetztem `Bootstrap__Email` und 
 dotnet NeuerKids.dll --bootstrap-admin
 ```
 
-Der Befehl verweigert die Ausführung, sobald eine Administration existiert. Er gibt einen vertraulichen, 24 Stunden gültigen Aktivierungspfad aus. Nur in einer nicht mitprotokollierten administrativen Sitzung verwenden, der konkreten Person sicher übergeben und anschließend `Bootstrap__Email` entfernen. Konten erhalten dadurch keine Standortrechte. Weitere Administrationen und Standortzuweisungen erfolgen im Verwaltungsbereich.
+Der Befehl verweigert die Ausführung, sobald eine Administration existiert. Er gibt einen vertraulichen, 24 Stunden gültigen Aktivierungspfad aus. Nur in einer nicht mitprotokollierten administrativen Sitzung verwenden, der konkreten Person sicher übergeben und anschließend `Bootstrap__Email` entfernen. Administrationskonten erhalten automatisch volle Rechte für alle vorhandenen und später angelegten Standorte. Weitere Zugänge und Rollen werden im Verwaltungsbereich gepflegt.
 
 Bei Einladungen wird der Link an die verifizierte E-Mail-Adresse beziehungsweise über einen identitätsgeprüften Kanal weitergegeben. Vor einer Authenticator-Rücksetzung Identität außerhalb der App prüfen. Es gibt bewusst keinen E-Mail-Versand ohne konfigurierten, freigegebenen Versanddienst.
 

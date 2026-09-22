@@ -15,9 +15,9 @@
   let seed, children, attendances, archives=[], accounts, role='manager';
   function fail(message,status=400){const error=new Error(message);error.status=status;throw error;}
   const member=()=>accounts.find(a=>a.id==='demo-'+role);
-  function allow(siteId,manager=false){const grant=member().sites.find(s=>s.siteId===siteId);if(!grant||manager&&grant.role!=='Manager')fail('Keine Berechtigung für diesen Standort.',403);return grant;}
+  function allow(siteId,manager=false){if(member().isAdmin&&sites.some(s=>s.siteId===siteId))return{...sites.find(s=>s.siteId===siteId),role:'Manager'};const grant=member().sites.find(s=>s.siteId===siteId);if(!grant||manager&&grant.role!=='Manager')fail('Keine Berechtigung für diesen Standort.',403);return grant;}
   function childBy(id){const c=children.find(x=>x.id===id);if(!c)fail('Kind nicht gefunden.',404);allow(c.siteId);return c;}
-  function reset(){children=clone(seed.children);attendances=clone(seed.attendances);archives=[];accounts=[{id:'demo-manager',displayName:'Alex · Hausleitung',email:'hausleitung@example.invalid',isAdmin:false,isBlocked:false,sites:sites.map(s=>({...s,role:'Manager'}))},{id:'demo-employee',displayName:'Sam · Mitarbeitende',email:'team@example.invalid',isAdmin:false,isBlocked:false,sites:[{...sites[0],role:'Employee'}]},{id:'demo-admin',displayName:'Zentrale Administration',email:'zentrale@example.invalid',isAdmin:true,isBlocked:false,sites:[]}];}
+  function reset(){children=clone(seed.children);attendances=clone(seed.attendances);archives=[];accounts=[{id:'demo-manager',displayName:'Alex · Hausleitung',email:'hausleitung@example.invalid',isAdmin:false,isBlocked:false,sites:sites.map(s=>({...s,role:'Manager'}))},{id:'demo-employee',displayName:'Sam · Mitarbeitende',email:'team@example.invalid',isAdmin:false,isBlocked:false,sites:[{...sites[0],role:'Employee'}]},{id:'demo-admin',displayName:'Zentrale Administration',email:'zentrale@example.invalid',isAdmin:true,isBlocked:false,sites:sites.map(s=>({...s,role:'Manager'}))}];}
   function view(c){const entries=attendances.filter(a=>a.childId===c.id),today=entries.find(a=>a.day===seed.today),last=entries.map(a=>a.day).sort().at(-1);return {...c,age:age(c.birthDate,seed.today),lastVisit:last??null,inactive:(last??c.createdOn??add(seed.today,-490))<yearAgo(seed.today),present:!!today,attendanceId:today?.id,canUndo:!!today&&(today.createdBy===member().id||allow(c.siteId).role==='Manager')};}
   function save(id,input){
     allow(input.siteId);if(!input.firstName?.trim()||!input.lastName?.trim())fail('Vor- und Nachname sind Pflicht.');
@@ -82,8 +82,8 @@
       if(!member().isAdmin)fail('Keine Berechtigung.',403);if(method==='GET')return clone(accounts);
       if(parts[2]===member().id)fail('Die eigenen Administrationsrechte können hier nicht verändert werden.');
       if(parts[3]==='reset')return{activationPath:location.pathname+'?page=account'};
-      if(method==='POST'){if(accounts.some(a=>a.email===input.email))fail('Diese E-Mail-Adresse existiert bereits.');accounts.push({id:crypto.randomUUID(),displayName:input.name,email:input.email,isAdmin:input.isAdmin,isBlocked:false,sites:clone(input.sites)});return{activationPath:location.pathname+'?page=account'};}
-      const a=accounts.find(x=>x.id===parts[2]);if(!a)fail('Zugang nicht gefunden.',404);Object.assign(a,{isAdmin:input.isAdmin,isBlocked:input.isBlocked,sites:clone(input.sites)});return null;
+      if(method==='POST'){if(accounts.some(a=>a.email===input.email))fail('Diese E-Mail-Adresse existiert bereits.');accounts.push({id:crypto.randomUUID(),displayName:input.name,email:input.email,isAdmin:input.isAdmin,isBlocked:false,sites:input.isAdmin?sites.map(s=>({...s,role:'Manager'})):clone(input.sites)});return{activationPath:location.pathname+'?page=account'};}
+      const a=accounts.find(x=>x.id===parts[2]);if(!a)fail('Zugang nicht gefunden.',404);Object.assign(a,{isAdmin:input.isAdmin,isBlocked:input.isBlocked,sites:input.isAdmin?sites.map(s=>({...s,role:'Manager'})):clone(input.sites)});return null;
     }
     fail('Diese Funktion ist in der öffentlichen Demo nicht verfügbar.');
   }

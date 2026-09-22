@@ -63,9 +63,18 @@ public class HttpTests : IClassFixture<AppFactory>
         Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/reports/export",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{1}})).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/reports/export",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{2}})).StatusCode);
     }
-    [Fact] public async Task AdminCannotAccessChildrenWithoutMembership()
+    [Fact] public async Task AdministrationHasFullRightsAtAllSites()
     {
-        using var client=await Login("admin");Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/api/children?siteId=1")).StatusCode);Assert.Equal(HttpStatusCode.OK,(await client.GetAsync("/api/admin/users")).StatusCode);
+        using var client=await Login("admin");
+        var session=await client.GetFromJsonAsync<JsonElement>("/api/session");
+        Assert.Equal(2,session.GetProperty("sites").GetArrayLength());
+        Assert.All(session.GetProperty("sites").EnumerateArray(),site=>Assert.Equal("Manager",site.GetProperty("role").GetString()));
+        Assert.Equal(HttpStatusCode.OK,(await client.GetAsync("/api/children?siteId=1")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,(await client.GetAsync("/api/children?siteId=2")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,(await client.GetAsync("/Dashboard")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,(await client.PostAsJsonAsync("/api/reports",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{1,2},compare=false})).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,(await client.PostAsJsonAsync("/api/reports/export",new {start="2026-08-01",end="2026-08-31",siteIds=new[]{1,2},compare=false})).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,(await client.GetAsync("/api/admin/users")).StatusCode);
     }
     [Fact] public async Task PersonalDataResponsesAreNotCachedAndExportIsXlsx()
     {
