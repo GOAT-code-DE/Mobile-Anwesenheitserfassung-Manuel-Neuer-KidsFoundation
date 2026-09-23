@@ -82,7 +82,7 @@
     const root=$('#quick-results');if(!root)return;
     const active=matchMedia('(max-width:760px)').matches&&search.length>0;
     $('#main').classList.toggle('searching-children',active);root.hidden=!active;if(!active){root.innerHTML='';return;}
-    const visible=matches.slice(0,5);
+    const visible=matches;
     root.innerHTML=visible.length?visible.map(c=>`<button type="button" class="quick-child" ${c.present?'disabled':`data-attend="${c.id}"`} aria-label="${esc(c.firstName)} ${esc(c.lastName)}${c.present?' ist heute erfasst':' heute erfassen'}"><span class="quick-child-main"><strong>${esc(c.firstName)} ${esc(c.lastName)}</strong><small>${c.age} Jahre · ${date(c.birthDate)}</small></span><span class="quick-action">${c.present?'Heute erfasst':'Antippen zum Erfassen'}</span></button>`).join(''):'<div class="quick-empty">Kein passendes Kind gefunden.</div>';
   }
   async function openChild(id) {
@@ -107,7 +107,9 @@
   function initChildren() {
     if(page === 'today') $('#today-date').textContent = new Date(session.today + 'T12:00:00Z').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
     const searchInput=$('#child-search');
-    searchInput.addEventListener('input',renderChildren);
+    const clearButton=$('#search-clear');const syncClear=()=>{clearButton.hidden=!searchInput.value;};syncClear();
+    searchInput.addEventListener('input',()=>{syncClear();renderChildren();});
+    clearButton.addEventListener('click',()=>{searchInput.value='';syncClear();renderChildren();searchInput.focus();});
     $('#include-inactive').addEventListener('change',loadChildren);
     $$('[data-action="new-child"]').forEach(b=>b.addEventListener('click',()=>openChild()));
     $('#children-list').addEventListener('click',e=>{
